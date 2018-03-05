@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/inputs"
@@ -23,9 +24,20 @@ var (
 	bootTime        = []byte("btime")
 )
 
+type kernelStats struct {
+	ctx     int64
+	intr    int64
+	proc    int64
+	pageIn  int64
+	pageOut int64
+}
+
 type Kernel struct {
 	statFile        string
 	entropyStatFile string
+
+	lastTime  time.Time
+	lastStats *kernelStats
 }
 
 func (k *Kernel) Description() string {
@@ -51,6 +63,10 @@ func (k *Kernel) Gather(acc telegraf.Accumulator) error {
 		return err
 	}
 
+	curr := time.Now()
+	timeDelta := curr.Sub(k.lastTime).Seconds()
+	stat := kernelStats{}
+
 	fields := make(map[string]interface{})
 
 	fields["entropy_avail"] = entropyValue
@@ -63,19 +79,22 @@ func (k *Kernel) Gather(acc telegraf.Accumulator) error {
 			if err != nil {
 				return err
 			}
-			fields["interrupts"] = m
+			fields["interrupts"] = int64(m)
+			stat.intr = int64(m)
 		case bytes.Equal(field, contextSwitches):
 			m, err := strconv.ParseInt(string(dataFields[i+1]), 10, 64)
 			if err != nil {
 				return err
 			}
-			fields["context_switches"] = m
+			fields["context_switches"] = int64(m)
+			stat.ctx = int64(m)
 		case bytes.Equal(field, processesForked):
 			m, err := strconv.ParseInt(string(dataFields[i+1]), 10, 64)
 			if err != nil {
 				return err
 			}
-			fields["processes_forked"] = m
+			fields["processes_forked"] = int64(m)
+			stat.proc = int64(m)
 		case bytes.Equal(field, bootTime):
 			m, err := strconv.ParseInt(string(dataFields[i+1]), 10, 64)
 			if err != nil {
@@ -91,12 +110,28 @@ func (k *Kernel) Gather(acc telegraf.Accumulator) error {
 			if err != nil {
 				return err
 			}
-			fields["disk_pages_in"] = in
-			fields["disk_pages_out"] = out
+			fields["disk_pages_in"] = int64(in)
+			fields["disk_pages_out"] = int64(out)
+			stat.pageIn = int64(in)
+			stat.pageOut = int64(out)
 		}
 	}
 
-	acc.AddCounter("kernel", fields, map[string]string{})
+	acc.AddCounter("kernel", fields, map[string]string{}, curr)
+
+	if k.lastStats != nil {
+		fields2 := map[string]interface{}{
+			"ctxs_rate":    float64(stat.ctx-k.lastStats.ctx) / timeDelta,
+			"intr_rate":    float64(stat.intr-k.lastStats.intr) / timeDelta,
+			"proc_rate":    float64(stat.proc-k.lastStats.proc) / timeDelta,
+			"pagein_rate":  float64(stat.pageIn-k.lastStats.pageIn) / timeDelta,
+			"pageout_rate": float64(stat.pageOut-k.lastStats.pageOut) / timeDelta,
+		}
+		acc.AddGauge("kernel", fields2, map[string]string{}, curr)
+	}
+
+	k.lastTime = curr
+	k.lastStats = &stat
 
 	return nil
 }
