@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"sync"
 	"time"
+	"net"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
@@ -18,6 +19,18 @@ import (
 // Agent runs telegraf and collects data based on the given config
 type Agent struct {
 	Config *config.Config
+}
+
+func getOutboundIP() string {
+    conn, err := net.Dial("udp", "8.8.8.8:80")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+
+    localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+    return localAddr.IP.String()
 }
 
 // NewAgent returns an Agent struct based off the given Config
@@ -37,6 +50,10 @@ func NewAgent(config *config.Config) (*Agent, error) {
 		}
 
 		config.Tags["host"] = a.Config.Agent.Hostname
+	}
+
+	if _, ok := config.Tags["host_ip"]; !ok {
+		config.Tags["host_ip"] = getOutboundIP()
 	}
 
 	return a, nil
