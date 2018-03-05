@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
+
+	psnet "github.com/shirou/gopsutil/net"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/filter"
@@ -18,6 +21,9 @@ type NetIOStats struct {
 	skipChecks          bool
 	IgnoreProtocolStats bool
 	Interfaces          []string
+
+	lastTime  time.Time
+	lastStats map[string]psnet.IOCountersStat
 }
 
 func (n *NetIOStats) Description() string {
@@ -63,6 +69,9 @@ func (n *NetIOStats) Gather(acc telegraf.Accumulator) error {
 		interfacesByName[iface.Name] = iface
 	}
 
+	curr := time.Now()
+	timeDelta := curr.Sub(n.lastTime).Seconds()
+
 	for _, io := range netio {
 		if len(n.Interfaces) != 0 {
 			var found bool
@@ -103,8 +112,35 @@ func (n *NetIOStats) Gather(acc telegraf.Accumulator) error {
 			"drop_in":      io.Dropin,
 			"drop_out":     io.Dropout,
 		}
-		acc.AddCounter("net", fields, tags)
+		acc.AddCounter("net", fields, tags, curr)
+
+		if len(n.lastStats) == 0 {
+			continue
+		}
+
+		last, ok := n.lastStats[io.Name]
+		if !ok {
+			continue
+		}
+
+		fields2 := map[string]interface{}{
+			"bps_sent":     float64(io.BytesSent-last.BytesSent) / timeDelta,
+			"bps_recv":     float64(io.BytesRecv-last.BytesRecv) / timeDelta,
+			"pps_sent":     float64(io.PacketsSent-last.PacketsSent) / timeDelta,
+			"pps_recv":     float64(io.PacketsRecv-last.PacketsRecv) / timeDelta,
+			"pps_err_in":   float64(io.Errin-last.Errin) / timeDelta,
+			"pps_err_out":  float64(io.Errout-last.Errout) / timeDelta,
+			"pps_drop_in":  float64(io.Dropin-last.Dropin) / timeDelta,
+			"pps_drop_out": float64(io.Dropout-last.Dropout) / timeDelta,
+		}
+		acc.AddGauge("net", fields2, tags, curr)
 	}
+
+	n.lastStats = make(map[string]psnet.IOCountersStat)
+	for _, io := range netio {
+		n.lastStats[io.Name] = io
+	}
+	n.lastTime = curr
 
 	// Get system wide stats for different network protocols
 	// (ignore these stats if the call fails)
@@ -121,7 +157,7 @@ func (n *NetIOStats) Gather(acc telegraf.Accumulator) error {
 		tags := map[string]string{
 			"interface": "all",
 		}
-		acc.AddFields("net", fields, tags)
+		acc.AddFields("net", fields, tags, curr)
 	}
 
 	return nil
