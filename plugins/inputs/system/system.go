@@ -38,12 +38,16 @@ func (_ *SystemStats) Gather(acc telegraf.Accumulator) error {
 		return err
 	}
 
+	cpu := runtime.NumCPU()
 	acc.AddGauge("system", map[string]interface{}{
 		"load1":   loadavg.Load1,
 		"load5":   loadavg.Load5,
 		"load15":  loadavg.Load15,
 		"n_users": len(users),
 		"n_cpus":  runtime.NumCPU(),
+		"load1_pcore": loadavg.Load1/float64(cpu),
+		"load5_pcore": loadavg.Load5/float64(cpu),
+		"load15_pcore": loadavg.Load15/float64(cpu),
 	}, nil)
 	acc.AddCounter("system", map[string]interface{}{
 		"uptime": hostinfo.Uptime,

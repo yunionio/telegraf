@@ -39,7 +39,7 @@ var sampleConfig = `
   ## If true, collect raw CPU time metrics.
   collect_cpu_time = false
   ## If true, compute and report the sum of all non-idle CPU states.
-  report_active = false
+  report_active = true
 `
 
 func (_ *CPUStats) SampleConfig() string {

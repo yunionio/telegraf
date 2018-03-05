@@ -5,6 +5,9 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/shirou/gopsutil/disk"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/inputs"
@@ -91,6 +94,9 @@ type DiskIOStats struct {
 	SkipSerialNumber bool
 
 	infoCache map[string]diskInfoCache
+
+	lastStats map[string]disk.IOCountersStat
+	lastTime  time.Time
 }
 
 func (_ *DiskIOStats) Description() string {
@@ -133,6 +139,9 @@ func (s *DiskIOStats) Gather(acc telegraf.Accumulator) error {
 		return fmt.Errorf("error getting disk io info: %s", err)
 	}
 
+	curr := time.Now()
+	timeDelta := curr.Sub(s.lastTime).Seconds()
+
 	for _, io := range diskio {
 		tags := map[string]string{}
 		tags["name"] = s.diskName(io.Name)
@@ -150,16 +159,72 @@ func (s *DiskIOStats) Gather(acc telegraf.Accumulator) error {
 		fields := map[string]interface{}{
 			"reads":            io.ReadCount,
 			"writes":           io.WriteCount,
+			"iocount":          io.ReadCount + io.WriteCount,
+			"merged_reads":     io.MergedReadCount,
+			"merged_writes":    io.MergedWriteCount,
+			"merged_iocount":   io.MergedReadCount + io.MergedWriteCount,
 			"read_bytes":       io.ReadBytes,
 			"write_bytes":      io.WriteBytes,
-			"read_time":        io.ReadTime,
-			"write_time":       io.WriteTime,
-			"io_time":          io.IoTime,
-			"weighted_io_time": io.WeightedIO,
+			"iobytes":          io.ReadBytes + io.WriteBytes,
+			"read_time":        io.ReadTime, // ms
+			"write_time":       io.WriteTime, // ms
+			"io_time":          io.IoTime, // ms
+			"weighted_io_time": io.WeightedIO, // ms
 			"iops_in_progress": io.IopsInProgress,
 		}
-		acc.AddCounter("diskio", fields, tags)
+		acc.AddCounter("diskio", fields, tags, curr)
+
+		if len(s.lastStats) == 0 {
+            // If it's the 1st gather, can't get CPU Usage stats yet
+            continue
+        }
+
+		last, ok := s.lastStats[io.Name]
+        if !ok {
+            continue
+        }
+
+		readIo := io.ReadCount - last.ReadCount
+		writeIo := io.WriteCount - last.WriteCount
+		readBytes := io.ReadBytes - last.ReadBytes
+		writeBytes := io.WriteBytes - last.WriteBytes
+		readTime := io.ReadTime - last.ReadTime
+		writeTime := io.WriteTime - last.WriteTime
+		ioTime := io.IoTime - last.IoTime
+		weightedIoTime := io.WeightedIO - last.WeightedIO
+		readAwait := 0.0
+		if readIo > 0 {
+			readAwait = float64(readTime)/float64(readIo)
+		}
+		writeAwait := 0.0
+		if writeIo > 0 {
+			writeAwait = float64(writeTime)/float64(writeIo)
+		}
+		ioAwait := 0.0
+		if readIo + writeIo > 0 {
+			ioAwait = float64(readTime + writeTime)/float64(readIo + writeIo)
+		}
+
+		fields2 := map[string]interface{}{
+			"iops": float64(readIo + writeIo)/timeDelta,
+			"read_iops": float64(readIo)/timeDelta,
+			"write_iops": float64(writeIo)/timeDelta,
+			"read_bps": float64(readBytes)/timeDelta,
+			"write_bps": float64(writeBytes)/timeDelta,
+			"read_await": readAwait,
+			"write_await": writeAwait,
+			"await": ioAwait,
+			"ioutil": float64(ioTime*100)/timeDelta/1000.0,
+			"avgqu_sz": float64(weightedIoTime)/timeDelta/1000.0,
+		}
+		acc.AddGauge("diskio", fields2, tags, curr)
 	}
+
+	s.lastStats = make(map[string]disk.IOCountersStat)
+	for _, io := range diskio {
+		s.lastStats[io.Name] = io
+	}
+	s.lastTime = curr
 
 	return nil
 }
