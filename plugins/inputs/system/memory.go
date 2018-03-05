@@ -2,9 +2,11 @@ package system
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/inputs"
+	"github.com/shirou/gopsutil/mem"
 )
 
 type MemStats struct {
@@ -43,6 +45,9 @@ func (s *MemStats) Gather(acc telegraf.Accumulator) error {
 
 type SwapStats struct {
 	ps PS
+
+	lastStats *mem.SwapMemoryStat
+    lastTime  time.Time
 }
 
 func (_ *SwapStats) Description() string {
@@ -57,6 +62,9 @@ func (s *SwapStats) Gather(acc telegraf.Accumulator) error {
 		return fmt.Errorf("error getting swap memory info: %s", err)
 	}
 
+	curr := time.Now()
+	timeDelta := curr.Sub(s.lastTime).Seconds()
+
 	fieldsG := map[string]interface{}{
 		"total":        swap.Total,
 		"used":         swap.Used,
@@ -69,6 +77,17 @@ func (s *SwapStats) Gather(acc telegraf.Accumulator) error {
 	}
 	acc.AddGauge("swap", fieldsG, nil)
 	acc.AddCounter("swap", fieldsC, nil)
+
+	if s.lastStats != nil {
+		fields2 := map[string]interface{} {
+			"in_bps": float64(swap.Sin - s.lastStats.Sin)/timeDelta,
+			"out_bps": float64(swap.Sout - s.lastStats.Sout)/timeDelta,
+		}
+		acc.AddGauge("swap", fields2, nil, curr)
+	}
+
+	s.lastStats = swap
+	s.lastTime = curr
 
 	return nil
 }

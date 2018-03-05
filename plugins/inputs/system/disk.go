@@ -175,14 +175,14 @@ func (s *DiskIOStats) Gather(acc telegraf.Accumulator) error {
 		acc.AddCounter("diskio", fields, tags, curr)
 
 		if len(s.lastStats) == 0 {
-            // If it's the 1st gather, can't get CPU Usage stats yet
-            continue
-        }
+			// If it's the 1st gather, can't get CPU Usage stats yet
+			continue
+		}
 
 		last, ok := s.lastStats[io.Name]
-        if !ok {
-            continue
-        }
+		if !ok {
+			continue
+		}
 
 		readIo := io.ReadCount - last.ReadCount
 		writeIo := io.WriteCount - last.WriteCount

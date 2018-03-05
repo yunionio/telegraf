@@ -107,16 +107,16 @@ func (s *NetIOStats) Gather(acc telegraf.Accumulator) error {
 		}
 
 		fields2 := map[string]interface{}{
-            "bps_sent": float64(io.BytesSent - last.BytesSent)/timeDelta,
-            "bps_recv": float64(io.BytesRecv - last.BytesRecv)/timeDelta,
-            "pps_sent": float64(io.PacketsSent - last.PacketsSent)/timeDelta,
-            "pps_recv": float64(io.PacketsRecv - last.PacketsRecv)/timeDelta,
-            "pps_err_in": float64(io.Errin - last.Errin)/timeDelta,
-            "pps_err_out": float64(io.Errout - last.Errout)/timeDelta,
-            "pps_drop_in": float64(io.Dropin - last.Dropin)/timeDelta,
-            "pps_drop_out": float64(io.Dropout - last.Dropout)/timeDelta,
-        }
-        acc.AddGauge("net", fields2, tags, curr)
+			"bps_sent": float64(io.BytesSent - last.BytesSent)*8.0/timeDelta,
+			"bps_recv": float64(io.BytesRecv - last.BytesRecv)*8.0/timeDelta,
+			"pps_sent": float64(io.PacketsSent - last.PacketsSent)/timeDelta,
+			"pps_recv": float64(io.PacketsRecv - last.PacketsRecv)/timeDelta,
+			"pps_err_in": float64(io.Errin - last.Errin)/timeDelta,
+			"pps_err_out": float64(io.Errout - last.Errout)/timeDelta,
+			"pps_drop_in": float64(io.Dropin - last.Dropin)/timeDelta,
+			"pps_drop_out": float64(io.Dropout - last.Dropout)/timeDelta,
+		}
+		acc.AddGauge("net", fields2, tags, curr)
 	}
 
 	s.lastStats = make(map[string]psnet.IOCountersStat)
