@@ -58,18 +58,22 @@ func (s *DiskStats) Gather(acc telegraf.Accumulator) error {
 			continue
 		}
 		mountOpts := parseOptions(partitions[i].Opts)
+		mode := mountOpts.Mode()
 		tags := map[string]string{
 			"path":   du.Path,
 			"device": strings.Replace(partitions[i].Device, "/dev/", "", -1),
 			"fstype": du.Fstype,
-			"mode":   mountOpts.Mode(),
+			"mode":   mode,
 		}
 		var used_percent float64
 		if du.Used+du.Free > 0 {
 			used_percent = float64(du.Used) /
 				(float64(du.Used) + float64(du.Free)) * 100
 		}
-
+		ro := 0
+		if mode == "ro" {
+			ro = 1
+		}
 		fields := map[string]interface{}{
 			"total":        du.Total,
 			"free":         du.Free,
@@ -78,6 +82,7 @@ func (s *DiskStats) Gather(acc telegraf.Accumulator) error {
 			"inodes_total": du.InodesTotal,
 			"inodes_free":  du.InodesFree,
 			"inodes_used":  du.InodesUsed,
+			"read_only":    ro,
 		}
 		acc.AddGauge("disk", fields, tags)
 	}

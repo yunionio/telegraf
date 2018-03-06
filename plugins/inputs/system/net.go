@@ -5,6 +5,8 @@ import (
 	"net"
 	"strings"
 	"time"
+	"io/ioutil"
+	"strconv"
 
 	psnet "github.com/shirou/gopsutil/net"
 
@@ -19,6 +21,7 @@ type NetIOStats struct {
 
 	skipChecks bool
 	Interfaces []string
+	Speed int
 
 	lastTime time.Time
 	lastStats map[string]psnet.IOCountersStat
@@ -34,10 +37,27 @@ var netSampleConfig = `
   ## regardless of status.
   ##
   # interfaces = ["eth0"]
+  # speed = 1000
 `
 
 func (_ *NetIOStats) SampleConfig() string {
 	return netSampleConfig
+}
+
+func (s *NetIOStats) interfaceSpeed(name string) int {
+	path := fmt.Sprintf("/sys/class/net/%s/speed", name)
+	content, err := ioutil.ReadFile(path)
+	speed := 0
+	if err == nil {
+		speed, err = strconv.Atoi(string(content))
+		if err != nil {
+			speed = 0
+		}
+	}
+	if speed == 0 {
+		speed = s.Speed
+	}
+	return speed
 }
 
 func (s *NetIOStats) Gather(acc telegraf.Accumulator) error {
@@ -106,15 +126,23 @@ func (s *NetIOStats) Gather(acc telegraf.Accumulator) error {
 			continue
 		}
 
+		bps_sent := float64(io.BytesSent - last.BytesSent)*8.0/timeDelta
+		bps_recv := float64(io.BytesRecv - last.BytesRecv)*8.0/timeDelta
 		fields2 := map[string]interface{}{
-			"bps_sent": float64(io.BytesSent - last.BytesSent)*8.0/timeDelta,
-			"bps_recv": float64(io.BytesRecv - last.BytesRecv)*8.0/timeDelta,
+			"bps_sent": bps_sent,
+			"bps_recv": bps_recv,
 			"pps_sent": float64(io.PacketsSent - last.PacketsSent)/timeDelta,
 			"pps_recv": float64(io.PacketsRecv - last.PacketsRecv)/timeDelta,
 			"pps_err_in": float64(io.Errin - last.Errin)/timeDelta,
 			"pps_err_out": float64(io.Errout - last.Errout)/timeDelta,
 			"pps_drop_in": float64(io.Dropin - last.Dropin)/timeDelta,
 			"pps_drop_out": float64(io.Dropout - last.Dropout)/timeDelta,
+		}
+		speed := s.interfaceSpeed(io.Name)
+		fields2["speed"] = speed
+		if speed > 0 {
+			fields2["if_in_percent"] = bps_recv/float64(speed)/10000.0
+			fields2["if_out_percent"] = bps_sent/float64(speed)/10000.0
 		}
 		acc.AddGauge("net", fields2, tags, curr)
 	}
