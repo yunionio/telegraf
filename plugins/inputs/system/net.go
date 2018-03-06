@@ -57,6 +57,9 @@ func (s *NetIOStats) interfaceSpeed(name string) int {
 	if speed == 0 {
 		speed = s.Speed
 	}
+    if speed == 0 {
+		speed = 1000
+	}
 	return speed
 }
 
