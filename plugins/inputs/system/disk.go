@@ -74,6 +74,11 @@ func (s *DiskStats) Gather(acc telegraf.Accumulator) error {
 		if mode == "ro" {
 			ro = 1
 		}
+		var inodesUsedPercent float64
+		if du.InodesFree + du.InodesUsed > 0 {
+			inodesUsedPercent = float64(du.InodesUsed) /
+				(float64(du.InodesFree) + float64(du.InodesUsed)) * 100
+		}
 		fields := map[string]interface{}{
 			"total":        du.Total,
 			"free":         du.Free,
@@ -82,6 +87,7 @@ func (s *DiskStats) Gather(acc telegraf.Accumulator) error {
 			"inodes_total": du.InodesTotal,
 			"inodes_free":  du.InodesFree,
 			"inodes_used":  du.InodesUsed,
+			"inodes_used_percent": inodesUsedPercent,
 			"read_only":    ro,
 		}
 		acc.AddGauge("disk", fields, tags)
