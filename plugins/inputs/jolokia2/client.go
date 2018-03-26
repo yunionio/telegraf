@@ -15,6 +15,7 @@ import (
 
 type Client struct {
 	URL    string
+	Name   string
 	client *http.Client
 	config *ClientConfig
 }
@@ -99,7 +100,7 @@ type jolokiaResponse struct {
 	Status  int            `json:"status"`
 }
 
-func NewClient(url string, config *ClientConfig) (*Client, error) {
+func NewClient(url string, name string, config *ClientConfig) (*Client, error) {
 	tlsConfig, err := internal.GetTLSConfig(
 		config.SSLCert, config.SSLKey, config.SSLCA, config.InsecureSkipVerify)
 	if err != nil {
@@ -118,6 +119,7 @@ func NewClient(url string, config *ClientConfig) (*Client, error) {
 
 	return &Client{
 		URL:    url,
+		Name:   name,
 		config: config,
 		client: client,
 	}, nil

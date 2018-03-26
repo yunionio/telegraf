@@ -13,7 +13,7 @@ type JolokiaAgent struct {
 	DefaultFieldSeparator string
 	DefaultTagPrefix      string
 
-	URLs            []string `toml:"urls"`
+	URLs            []URLConfig `toml:"url"`
 	Username        string
 	Password        string
 	ResponseTimeout time.Duration `toml:"response_timeout"`
@@ -33,8 +33,6 @@ func (ja *JolokiaAgent) SampleConfig() string {
   # default_field_prefix    = ""
   # default_field_separator = "."
 
-  # Add agents URLs to query
-  urls = ["http://localhost:8080/jolokia"]
   # username = ""
   # password = ""
   # response_timeout = "5s"
@@ -45,11 +43,30 @@ func (ja *JolokiaAgent) SampleConfig() string {
   # ssl_key  = "/var/private/client-key.pem"
   # insecure_skip_verify = false
 
+  # Add agents URLs to query
+  [[inputs.jolokia2_agent.urls]]
+    name = "cassandra"
+    url = "http://localhost:8080/jolokia"
+    # username = ""
+    # password = ""
+    # response_timeout = "5s"
+
+    ## Optional SSL config
+    # ssl_ca   = "/var/private/ca.pem"
+    # ssl_cert = "/var/private/client.pem"
+    # ssl_key  = "/var/private/client-key.pem"
+    # insecure_skip_verify = false
+
+  [[inputs.jolokia2_agent.urls]]
+    name = "kafka"
+    url = "http://localhost:8081/jolokia"
+
   ## Add metrics to read
-  [[inputs.jolokia2_agent.metric]]
+  [[inputs.jolokia2_agent.metrics]]
     name  = "java_runtime"
     mbean = "java.lang:type=Runtime"
     paths = ["Uptime"]
+	apps = ["kafka"]
 `
 }
 
@@ -99,14 +116,36 @@ func (ja *JolokiaAgent) createMetrics() []Metric {
 	return metrics
 }
 
-func (ja *JolokiaAgent) createClient(url string) (*Client, error) {
-	return NewClient(url, &ClientConfig{
-		Username:           ja.Username,
-		Password:           ja.Password,
-		ResponseTimeout:    ja.ResponseTimeout,
-		SSLCA:              ja.SSLCA,
-		SSLCert:            ja.SSLCert,
-		SSLKey:             ja.SSLKey,
-		InsecureSkipVerify: ja.InsecureSkipVerify,
+func (ja *JolokiaAgent) createClient(url URLConfig) (*Client, error) {
+	uname := url.Username
+	if len(uname) == 0 {
+		uname = ja.Username
+	}
+	passwd := url.Password
+	if len(passwd) == 0 {
+		passwd = ja.Password
+	}
+	respto := url.ResponseTimeout
+	if respto == 0 {
+		respto = ja.ResponseTimeout
+	}
+	sslca   := url.SSLCA
+	sslcert := url.SSLCert
+	sslkey  := url.SSLKey
+	skipvfy := url.InsecureSkipVerify
+	if len(sslca) == 0 {
+		sslca   = ja.SSLCA
+		sslcert = ja.SSLCert
+		sslkey  = ja.SSLKey
+		skipvfy = ja.InsecureSkipVerify
+	}
+	return NewClient(url.URL, url.Name, &ClientConfig{
+		Username:           uname,
+		Password:           passwd,
+		ResponseTimeout:    respto,
+		SSLCA:              sslca,
+		SSLCert:            sslcert,
+		SSLKey:             sslkey,
+		InsecureSkipVerify: skipvfy,
 	})
 }

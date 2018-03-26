@@ -18,22 +18,26 @@ type Gatherer struct {
 func NewGatherer(metrics []Metric) *Gatherer {
 	return &Gatherer{
 		metrics:  metrics,
-		requests: makeReadRequests(metrics),
+		requests: makeReadRequests(metrics, ""),
 	}
 }
 
 // Gather adds points to an accumulator from responses returned
 // by a Jolokia agent.
 func (g *Gatherer) Gather(client *Client, acc telegraf.Accumulator) error {
-	var tags map[string]string
+	tags := make(map[string]string)
 
 	if client.config.ProxyConfig != nil {
-		tags = map[string]string{"jolokia_proxy_url": client.URL}
+		tags["jolokia_proxy_url"] = client.URL
 	} else {
-		tags = map[string]string{"jolokia_agent_url": client.URL}
+		if len(client.Name) > 0 {
+			tags["jolokia_app"] = client.Name
+		} else {
+			tags["jolokia_agent_url"] = client.URL
+		}
 	}
 
-	requests := makeReadRequests(g.metrics)
+	requests := makeReadRequests(g.metrics, client.Name)
 	responses, err := client.read(requests)
 	if err != nil {
 		return err
@@ -94,6 +98,10 @@ func (g *Gatherer) generatePoints(metric Metric, responses []ReadResponse) ([]po
 		}
 
 		if !metricMatchesResponse(metric, response) {
+			continue
+		}
+
+		if response.Value == nil {
 			continue
 		}
 
@@ -192,9 +200,22 @@ func tagSetsMatch(a, b map[string]string) bool {
 }
 
 // makeReadRequests creates ReadRequest objects from metrics definitions.
-func makeReadRequests(metrics []Metric) []ReadRequest {
+func makeReadRequests(metrics []Metric, app string) []ReadRequest {
 	var requests []ReadRequest
 	for _, metric := range metrics {
+
+		if len(app) > 0 && len(metric.Apps) > 0 {
+			appMatch := false
+			for _, _app := range metric.Apps {
+				if _app == app {
+					appMatch = true
+					break
+				}
+			}
+			if ! appMatch {
+				continue
+			}
+		}
 
 		if len(metric.Paths) == 0 {
 			requests = append(requests, ReadRequest{

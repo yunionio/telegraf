@@ -116,7 +116,7 @@ func (jp *JolokiaProxy) createClient() (*Client, error) {
 		})
 	}
 
-	return NewClient(jp.URL, &ClientConfig{
+	return NewClient(jp.URL, "", &ClientConfig{
 		Username:           jp.Username,
 		Password:           jp.Password,
 		ResponseTimeout:    jp.ResponseTimeout,

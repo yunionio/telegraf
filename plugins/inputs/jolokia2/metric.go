@@ -13,6 +13,7 @@ type MetricConfig struct {
 	FieldSeparator *string
 	TagPrefix      *string
 	TagKeys        []string
+	Apps           []string
 }
 
 // A Metric represents a specification for a
@@ -27,6 +28,7 @@ type Metric struct {
 	FieldSeparator string
 	TagPrefix      string
 	TagKeys        []string
+	Apps           []string
 
 	mbeanDomain     string
 	mbeanProperties []string
@@ -38,6 +40,7 @@ func NewMetric(config MetricConfig, defaultFieldPrefix, defaultFieldSeparator, d
 		Mbean:   config.Mbean,
 		Paths:   config.Paths,
 		TagKeys: config.TagKeys,
+        Apps:    config.Apps,
 	}
 
 	if config.FieldName != nil {
