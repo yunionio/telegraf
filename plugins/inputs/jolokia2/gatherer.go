@@ -25,15 +25,15 @@ func NewGatherer(metrics []Metric) *Gatherer {
 // Gather adds points to an accumulator from responses returned
 // by a Jolokia agent.
 func (g *Gatherer) Gather(client *Client, acc telegraf.Accumulator) error {
-	tags := make(map[string]string)
+	var tags map[string]string
 
 	if client.config.ProxyConfig != nil {
-		tags["jolokia_proxy_url"] = client.URL
+		tags = map[string]string{"jolokia_proxy_url": client.URL}
 	} else {
 		if len(client.Name) > 0 {
-			tags["jolokia_app"] = client.Name
+			tags = map[string]string{"jolokia_app": client.Name}
 		} else {
-			tags["jolokia_agent_url"] = client.URL
+			tags = map[string]string{"jolokia_agent_url": client.URL}
 		}
 	}
 
