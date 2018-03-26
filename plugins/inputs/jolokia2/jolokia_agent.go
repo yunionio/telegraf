@@ -66,7 +66,7 @@ func (ja *JolokiaAgent) SampleConfig() string {
     name  = "java_runtime"
     mbean = "java.lang:type=Runtime"
     paths = ["Uptime"]
-	apps = ["kafka"]
+    apps = ["kafka"]
 `
 }
 
