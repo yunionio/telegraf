@@ -15,13 +15,19 @@ import (
 	"github.com/influxdata/telegraf/plugins/inputs"
 )
 
+type InterfaceProfile struct {
+	Name string
+	Alias string
+	Speed int
+}
+
 type NetIOStats struct {
 	filter filter.Filter
 	ps     PS
 
 	skipChecks bool
 	Interfaces []string
-	Speed int
+	InterfaceConf []InterfaceProfile
 
 	lastTime time.Time
 	lastStats map[string]psnet.IOCountersStat
@@ -37,14 +43,13 @@ var netSampleConfig = `
   ## regardless of status.
   ##
   # interfaces = ["eth0"]
-  # speed = 1000
 `
 
 func (_ *NetIOStats) SampleConfig() string {
 	return netSampleConfig
 }
 
-func (s *NetIOStats) interfaceSpeed(name string) int {
+func getInterfaceSpeed(name string) int {
 	path := fmt.Sprintf("/sys/class/net/%s/speed", name)
 	content, err := ioutil.ReadFile(path)
 	speed := 0
@@ -54,13 +59,16 @@ func (s *NetIOStats) interfaceSpeed(name string) int {
 			speed = 0
 		}
 	}
-	if speed == 0 {
-		speed = s.Speed
-	}
-    if speed == 0 {
-		speed = 1000
-	}
 	return speed
+}
+
+func (s *NetIOStats) getProfile(name string) *InterfaceProfile {
+	for _, inf := range s.InterfaceConf {
+		if inf.Name == name {
+			return &inf
+		}
+	}
+	return nil
 }
 
 func (s *NetIOStats) Gather(acc telegraf.Accumulator) error {
@@ -108,6 +116,11 @@ func (s *NetIOStats) Gather(acc telegraf.Accumulator) error {
 			"interface": io.Name,
 		}
 
+		prof := s.getProfile(io.Name)
+		if prof != nil && len(prof.Alias) > 0 {
+			tags["alias"] = prof.Alias
+		}
+
 		fields := map[string]interface{}{
 			"bytes_sent":   io.BytesSent,
 			"bytes_recv":   io.BytesRecv,
@@ -141,7 +154,12 @@ func (s *NetIOStats) Gather(acc telegraf.Accumulator) error {
 			"pps_drop_in": float64(io.Dropin - last.Dropin)/timeDelta,
 			"pps_drop_out": float64(io.Dropout - last.Dropout)/timeDelta,
 		}
-		speed := s.interfaceSpeed(io.Name)
+		speed := 0
+		if prof != nil && prof.Speed > 0 {
+			speed = prof.Speed
+		} else {
+			speed = getInterfaceSpeed(io.Name)
+		}
 		fields2["speed"] = speed
 		if speed > 0 {
 			fields2["if_in_percent"] = bps_recv/float64(speed)/10000.0
