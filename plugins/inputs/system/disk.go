@@ -102,6 +102,7 @@ type DiskIOStats struct {
 	Devices          []string
 	DeviceTags       []string
 	NameTemplates    []string
+	Excludes         string
 	SkipSerialNumber bool
 
 	infoCache map[string]diskInfoCache
@@ -153,7 +154,15 @@ func (s *DiskIOStats) Gather(acc telegraf.Accumulator) error {
 	curr := time.Now()
 	timeDelta := curr.Sub(s.lastTime).Seconds()
 
+	var excludeReg *regexp.Regexp
+	if len(s.Excludes) > 0 {
+		excludeReg = regexp.MustCompile(s.Excludes)
+	}
+
 	for _, io := range diskio {
+		if excludeReg != nil && excludeReg.MatchString(io.Name) {
+			continue
+		}
 		tags := map[string]string{}
 		tags["name"] = s.diskName(io.Name)
 		for t, v := range s.diskTags(io.Name) {
