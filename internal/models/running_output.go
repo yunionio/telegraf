@@ -36,6 +36,7 @@ type RunningOutput struct {
 	metrics     *buffer.Buffer
 	failMetrics *buffer.Buffer
 
+	IsConnected bool // flag to indicate the output is connected
 	// Guards against concurrent calls to the Output as described in #3009
 	sync.Mutex
 }
