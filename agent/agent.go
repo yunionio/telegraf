@@ -3,11 +3,11 @@ package agent
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"runtime"
 	"sync"
 	"time"
-	"net"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
@@ -22,15 +22,15 @@ type Agent struct {
 }
 
 func getOutboundIP() string {
-    conn, err := net.Dial("udp", "8.8.8.8:80")
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer conn.Close()
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
 
-    localAddr := conn.LocalAddr().(*net.UDPAddr)
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
-    return localAddr.IP.String()
+	return localAddr.IP.String()
 }
 
 // NewAgent returns an Agent struct based off the given Config
@@ -40,7 +40,7 @@ func NewAgent(config *config.Config) (*Agent, error) {
 	}
 
 	// if !a.Config.Agent.OmitHostname {
-    if _, ok := config.Tags["host"]; !ok {
+	if _, ok := config.Tags["host"]; !ok {
 		if a.Config.Agent.Hostname == "" {
 			hostname, err := os.Hostname()
 			if err != nil {
@@ -60,9 +60,27 @@ func NewAgent(config *config.Config) (*Agent, error) {
 	return a, nil
 }
 
-// Connect connects to all configured outputs
 func (a *Agent) Connect() error {
+	go a.tryConnectAll()
+	return nil
+}
+
+// Connect connects to all configured outputs
+func (a *Agent) tryConnectAll() {
+	for {
+		err := a.connect()
+		if err == nil {
+			break
+		}
+		time.Sleep(30 * time.Second)
+	}
+}
+
+func (a *Agent) connect() error {
 	for _, o := range a.Config.Outputs {
+		if o.IsConnected {
+			continue
+		}
 		switch ot := o.Output.(type) {
 		case telegraf.ServiceOutput:
 			if err := ot.Start(); err != nil {
@@ -83,6 +101,7 @@ func (a *Agent) Connect() error {
 				return err
 			}
 		}
+		o.IsConnected = true
 		log.Printf("D! Successfully connected to output: %s\n", o.Name)
 	}
 	return nil
@@ -92,6 +111,9 @@ func (a *Agent) Connect() error {
 func (a *Agent) Close() error {
 	var err error
 	for _, o := range a.Config.Outputs {
+		if !o.IsConnected {
+			continue
+		}
 		err = o.Output.Close()
 		switch ot := o.Output.(type) {
 		case telegraf.ServiceOutput:
@@ -251,6 +273,10 @@ func (a *Agent) flush() {
 
 	wg.Add(len(a.Config.Outputs))
 	for _, o := range a.Config.Outputs {
+		if !o.IsConnected {
+			wg.Done()
+			continue
+		}
 		go func(output *models.RunningOutput) {
 			defer wg.Done()
 			err := output.Write()
