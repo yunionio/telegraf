@@ -30,33 +30,103 @@ popd > /dev/null
 
 DOCKER_DIR="$SRC_DIR/scripts"
 
-REGISTRY=${REGISTRY:-docker.io/yunion}
-TAG=${TAG:-latest}
-
 build_bin() {
+    local BUILD_ARCH=$2
+    local BUILD_CC=$3
+    local BUILD_CGO=$4
     docker run --rm \
         -v $GOPATH/src:/root/go/src \
-        registry.cn-beijing.aliyuncs.com/yunionio/alpine-build:1.0-1 \
-        /bin/sh -c "set -ex; cd /root/go/src/github.com/influxdata/telegraf; make telegraf; chown $(id -u):$(id -g) telegraf"
+        registry.cn-beijing.aliyuncs.com/yunionio/alpine-build:1.0-3 \
+        /bin/sh -c "set -ex; cd /root/go/src/github.com/influxdata/telegraf; $BUILD_ARCH $BUILD_CC $BUILD_CGO GOOS=linux make telegraf; chown $(id -u):$(id -g) telegraf"
+}
+
+
+build_bundle_libraries() {
+    for bundle_component in 'baremetal-agent'; do
+        if [ $1 == $bundle_component ]; then
+            $CUR_DIR/bundle_libraries.sh _output/bin/bundles/$1 _output/bin/$1
+            break
+        fi
+    done
 }
 
 build_image() {
     local tag=$1
     local file=$2
     local path=$3
-    sudo docker build -t "$tag" -f "$2" "$3"
+    docker build -t "$tag" -f "$2" "$3"
+}
+
+buildx_and_push() {
+    local tag=$1
+    local file=$2
+    local path=$3
+    local arch=$4
+    docker buildx build -t "$tag" --platform "linux/$arch" -f "$2" "$3" --push
 }
 
 push_image() {
     local tag=$1
-    sudo docker push "$tag"
+    docker push "$tag"
+}
+
+build_process() {
+    local component=$1
+    build_bin $component
+    build_bundle_libraries $component
+    img_name="$REGISTRY/$component:$TAG"
+    build_image $img_name $DOCKER_DIR/Dockerfile.$component $SRC_DIR
+    push_image "$img_name"
+}
+
+build_process_with_buildx() {
+    local component=$1
+    local arch=$2
+
+    build_env="GOARCH=$arch"
+    img_name="$REGISTRY/$component:$TAG"
+    if [[ $arch == arm64 ]]; then
+        img_name="$img_name-$arch"
+        build_env="$build_env CC=aarch64-linux-musl-gcc"
+        if [[ $component == host ]]; then
+            build_env="$build_env CGO_ENABLED=1"
+        fi
+    fi
+
+    case "$component" in
+        host|esxi-agent)
+            buildx_and_push $img_name $DOCKER_DIR/multi-arch/Dockerfile.$component $SRC_DIR $arch
+            ;;
+        *)
+            build_bin $component $build_env
+            buildx_and_push $img_name $DOCKER_DIR/Dockerfile.$component $SRC_DIR $arch
+            ;;
+    esac
 }
 
 COMPONENTS="telegraf"
-TAG="release-1.5"
+TAG=${TAG:-release-1.5.1}
+REGISTRY=${REGISTRY:-docker.io/yunion}
 
 cd $SRC_DIR
-build_bin $COMPONENTS
-img_name="$REGISTRY/$COMPONENTS:$TAG"
-build_image $img_name $DOCKER_DIR/Dockerfile.$COMPONENTS $SRC_DIR
-push_image "$img_name"
+for component in $COMPONENTS; do
+    case "$ARCH" in
+        all)
+            for arch in "arm64" "amd64"; do
+                build_process_with_buildx $component $arch
+            done
+            ;;
+        arm64|amd64)
+            build_process_with_buildx $component $ARCH
+            ;;
+        *)
+            build_process $component
+            ;;
+    esac
+done
+
+
+
+
+
+
