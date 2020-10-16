@@ -10,7 +10,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/influxdata/telegraf"
@@ -187,6 +189,17 @@ func (h *HTTPListener) Stop() {
 	log.Println("I! Stopped HTTP listener service on ", h.ServiceAddress)
 }
 
+func (h *HTTPListener) ReloadProcess() {
+	go func() {
+		time.Sleep(1 * time.Second)
+		log.Println("I'm goint to reload process !!")
+		err := syscall.Exec(os.Args[0], os.Args, os.Environ())
+		if err != nil {
+			log.Fatalf("Failed reolad process %s", err)
+		}
+	}()
+}
+
 func (h *HTTPListener) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	h.RequestsRecv.Incr(1)
 	defer h.RequestsServed.Incr(1)
@@ -208,6 +221,10 @@ func (h *HTTPListener) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		h.PingsRecv.Incr(1)
 		defer h.PingsServed.Incr(1)
 		// respond to ping requests
+		res.WriteHeader(http.StatusNoContent)
+	case "/reload":
+		defer h.ReloadProcess()
+		// respond to reload requests
 		res.WriteHeader(http.StatusNoContent)
 	default:
 		defer h.NotFoundsServed.Incr(1)
