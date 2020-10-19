@@ -105,7 +105,7 @@ build_process_with_buildx() {
 }
 
 COMPONENTS="telegraf"
-TAG=${TAG:-release-1.5.1}
+TAG=${TAG:-release-1.5.2}
 REGISTRY=${REGISTRY:-docker.io/yunion}
 
 cd $SRC_DIR
