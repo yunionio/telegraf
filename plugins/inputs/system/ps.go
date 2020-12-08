@@ -16,7 +16,7 @@ import (
 
 type PS interface {
 	CPUTimes(perCPU, totalCPU bool) ([]cpu.TimesStat, error)
-	DiskUsage(mountPointFilter []string, fstypeExclude []string) ([]*disk.UsageStat, []*disk.PartitionStat, error)
+	DiskUsage(mountPointFilter, ignoreMountPointFilter, fstypeExclude []string) ([]*disk.UsageStat, []*disk.PartitionStat, error)
 	NetIO() ([]net.IOCountersStat, error)
 	NetProto() ([]net.ProtoCountersStat, error)
 	DiskIO(names []string) (map[string]disk.IOCountersStat, error)
@@ -69,8 +69,7 @@ func (s *systemPS) CPUTimes(perCPU, totalCPU bool) ([]cpu.TimesStat, error) {
 }
 
 func (s *systemPS) DiskUsage(
-	mountPointFilter []string,
-	fstypeExclude []string,
+	mountPointFilter, ignoreMountPointFilter, fstypeExclude []string,
 ) ([]*disk.UsageStat, []*disk.PartitionStat, error) {
 	parts, err := s.Partitions(true)
 	if err != nil {
@@ -82,6 +81,11 @@ func (s *systemPS) DiskUsage(
 	for _, filter := range mountPointFilter {
 		mountPointFilterSet[filter] = true
 	}
+	ignoreMountPointFilterSet := make(map[string]bool)
+	for _, filter := range ignoreMountPointFilter {
+		ignoreMountPointFilterSet[filter] = true
+	}
+
 	fstypeExcludeSet := make(map[string]bool)
 	for _, filter := range fstypeExclude {
 		fstypeExcludeSet[filter] = true
@@ -107,6 +111,14 @@ func (s *systemPS) DiskUsage(
 			// If the mount point is not a member of the filter set,
 			// don't gather info on it.
 			if _, ok := mountPointFilterSet[p.Mountpoint]; !ok {
+				continue
+			}
+		}
+
+		if len(ignoreMountPointFilter) > 0 {
+			// If the mount point is a member of the filter set,
+			// don't gather info on it.
+			if _, ok := ignoreMountPointFilterSet[p.Mountpoint]; ok {
 				continue
 			}
 		}

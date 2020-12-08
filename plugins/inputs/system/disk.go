@@ -19,8 +19,9 @@ type DiskStats struct {
 	// Legacy support
 	Mountpoints []string
 
-	MountPoints []string
-	IgnoreFS    []string `toml:"ignore_fs"`
+	MountPoints       []string
+	IgnoreMountPoints []string
+	IgnoreFS          []string `toml:"ignore_fs"`
 }
 
 func (_ *DiskStats) Description() string {
@@ -31,6 +32,8 @@ var diskSampleConfig = `
   ## By default, telegraf gather stats for all mountpoints.
   ## Setting mountpoints will restrict the stats to the specified mountpoints.
   # mount_points = ["/"]
+
+  # ignore_mount_points = ["/etc"]
 
   ## Ignore some mountpoints by filesystem type. For example (dev)tmpfs (usually
   ## present on /run, /var/run, /dev/shm or /dev).
@@ -47,7 +50,7 @@ func (s *DiskStats) Gather(acc telegraf.Accumulator) error {
 		s.MountPoints = s.Mountpoints
 	}
 
-	disks, partitions, err := s.ps.DiskUsage(s.MountPoints, s.IgnoreFS)
+	disks, partitions, err := s.ps.DiskUsage(s.MountPoints, s.IgnoreMountPoints, s.IgnoreFS)
 	if err != nil {
 		return fmt.Errorf("error getting disk usage info: %s", err)
 	}
@@ -75,20 +78,20 @@ func (s *DiskStats) Gather(acc telegraf.Accumulator) error {
 			ro = 1
 		}
 		var inodesUsedPercent float64
-		if du.InodesFree + du.InodesUsed > 0 {
+		if du.InodesFree+du.InodesUsed > 0 {
 			inodesUsedPercent = float64(du.InodesUsed) /
 				(float64(du.InodesFree) + float64(du.InodesUsed)) * 100
 		}
 		fields := map[string]interface{}{
-			"total":        du.Total,
-			"free":         du.Free,
-			"used":         du.Used,
-			"used_percent": used_percent,
-			"inodes_total": du.InodesTotal,
-			"inodes_free":  du.InodesFree,
-			"inodes_used":  du.InodesUsed,
+			"total":               du.Total,
+			"free":                du.Free,
+			"used":                du.Used,
+			"used_percent":        used_percent,
+			"inodes_total":        du.InodesTotal,
+			"inodes_free":         du.InodesFree,
+			"inodes_used":         du.InodesUsed,
 			"inodes_used_percent": inodesUsedPercent,
-			"read_only":    ro,
+			"read_only":           ro,
 		}
 		acc.AddGauge("disk", fields, tags)
 	}
@@ -186,9 +189,9 @@ func (s *DiskIOStats) Gather(acc telegraf.Accumulator) error {
 			"read_bytes":       io.ReadBytes,
 			"write_bytes":      io.WriteBytes,
 			"iobytes":          io.ReadBytes + io.WriteBytes,
-			"read_time":        io.ReadTime, // ms
-			"write_time":       io.WriteTime, // ms
-			"io_time":          io.IoTime, // ms
+			"read_time":        io.ReadTime,   // ms
+			"write_time":       io.WriteTime,  // ms
+			"io_time":          io.IoTime,     // ms
 			"weighted_io_time": io.WeightedIO, // ms
 			"iops_in_progress": io.IopsInProgress,
 		}
@@ -214,28 +217,28 @@ func (s *DiskIOStats) Gather(acc telegraf.Accumulator) error {
 		weightedIoTime := io.WeightedIO - last.WeightedIO
 		readAwait := 0.0
 		if readIo > 0 {
-			readAwait = float64(readTime)/float64(readIo)
+			readAwait = float64(readTime) / float64(readIo)
 		}
 		writeAwait := 0.0
 		if writeIo > 0 {
-			writeAwait = float64(writeTime)/float64(writeIo)
+			writeAwait = float64(writeTime) / float64(writeIo)
 		}
 		ioAwait := 0.0
-		if readIo + writeIo > 0 {
-			ioAwait = float64(readTime + writeTime)/float64(readIo + writeIo)
+		if readIo+writeIo > 0 {
+			ioAwait = float64(readTime+writeTime) / float64(readIo+writeIo)
 		}
 
 		fields2 := map[string]interface{}{
-			"iops": float64(readIo + writeIo)/timeDelta,
-			"read_iops": float64(readIo)/timeDelta,
-			"write_iops": float64(writeIo)/timeDelta,
-			"read_bps": float64(readBytes)/timeDelta,
-			"write_bps": float64(writeBytes)/timeDelta,
-			"read_await": readAwait,
+			"iops":        float64(readIo+writeIo) / timeDelta,
+			"read_iops":   float64(readIo) / timeDelta,
+			"write_iops":  float64(writeIo) / timeDelta,
+			"read_bps":    float64(readBytes) / timeDelta,
+			"write_bps":   float64(writeBytes) / timeDelta,
+			"read_await":  readAwait,
 			"write_await": writeAwait,
-			"await": ioAwait,
-			"ioutil": float64(ioTime*100)/timeDelta/1000.0,
-			"avgqu_sz": float64(weightedIoTime)/timeDelta/1000.0,
+			"await":       ioAwait,
+			"ioutil":      float64(ioTime*100) / timeDelta / 1000.0,
+			"avgqu_sz":    float64(weightedIoTime) / timeDelta / 1000.0,
 		}
 		acc.AddGauge("diskio", fields2, tags, curr)
 	}
