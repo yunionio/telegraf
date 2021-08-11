@@ -2,7 +2,9 @@ package net
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +16,12 @@ import (
 	"github.com/influxdata/telegraf/plugins/inputs/system"
 )
 
+type InterfaceProfile struct {
+	Name  string
+	Alias string
+	Speed int
+}
+
 type NetIOStats struct {
 	filter filter.Filter
 	ps     system.PS
@@ -21,6 +29,7 @@ type NetIOStats struct {
 	skipChecks          bool
 	IgnoreProtocolStats bool
 	Interfaces          []string
+	InterfaceConf       []InterfaceProfile
 
 	lastTime  time.Time
 	lastStats map[string]psnet.IOCountersStat
@@ -28,6 +37,28 @@ type NetIOStats struct {
 
 func (n *NetIOStats) Description() string {
 	return "Read metrics about network interface usage"
+}
+
+func getInterfaceSpeed(name string) int {
+	path := fmt.Sprintf("/sys/class/net/%s/speed", name)
+	content, err := ioutil.ReadFile(path)
+	speed := 0
+	if err == nil {
+		speed, err = strconv.Atoi(string(content))
+		if err != nil {
+			speed = 0
+		}
+	}
+	return speed
+}
+
+func (s *NetIOStats) getProfile(name string) *InterfaceProfile {
+	for _, inf := range s.InterfaceConf {
+		if inf.Name == name {
+			return &inf
+		}
+	}
+	return nil
 }
 
 var netSampleConfig = `
@@ -102,6 +133,11 @@ func (n *NetIOStats) Gather(acc telegraf.Accumulator) error {
 			"interface": io.Name,
 		}
 
+		prof := n.getProfile(io.Name)
+		if prof != nil && len(prof.Alias) > 0 {
+			tags["alias"] = prof.Alias
+		}
+
 		fields := map[string]interface{}{
 			"bytes_sent":   io.BytesSent,
 			"bytes_recv":   io.BytesRecv,
@@ -123,15 +159,29 @@ func (n *NetIOStats) Gather(acc telegraf.Accumulator) error {
 			continue
 		}
 
+		bpsSent := float64(io.BytesSent-last.BytesSent) * 8.0 / timeDelta
+		bpsRecv := float64(io.BytesRecv-last.BytesRecv) * 8.0 / timeDelta
+
 		fields2 := map[string]interface{}{
-			"bps_sent":     float64(io.BytesSent-last.BytesSent) / timeDelta,
-			"bps_recv":     float64(io.BytesRecv-last.BytesRecv) / timeDelta,
+			"bps_sent":     bpsSent,
+			"bps_recv":     bpsRecv,
 			"pps_sent":     float64(io.PacketsSent-last.PacketsSent) / timeDelta,
 			"pps_recv":     float64(io.PacketsRecv-last.PacketsRecv) / timeDelta,
 			"pps_err_in":   float64(io.Errin-last.Errin) / timeDelta,
 			"pps_err_out":  float64(io.Errout-last.Errout) / timeDelta,
 			"pps_drop_in":  float64(io.Dropin-last.Dropin) / timeDelta,
 			"pps_drop_out": float64(io.Dropout-last.Dropout) / timeDelta,
+		}
+		speed := 0
+		if prof != nil && prof.Speed > 0 {
+			speed = prof.Speed
+		} else {
+			speed = getInterfaceSpeed(io.Name)
+		}
+		fields2["speed"] = speed
+		if speed > 0 {
+			fields2["if_in_percent"] = bpsRecv / float64(speed) / 10000.0
+			fields2["if_out_percent"] = bpsSent / float64(speed) / 10000.0
 		}
 		acc.AddGauge("net", fields2, tags, curr)
 	}
