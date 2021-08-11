@@ -1,3 +1,4 @@
+CACHE_DIR = $(CURDIR)/_cache
 BUILD_DIR = $(CURDIR)/build
 CONTAINER_GO_DIR = /go
 CONTAINER_TELEGRAF_DIR = $(CONTAINER_GO_DIR)/src/github.com/influxdata/telegraf
@@ -6,6 +7,6 @@ container-packages:
 	docker run --rm \
 		--name docker-telegraf-build \
 		-v $(CURDIR):$(CONTAINER_TELEGRAF_DIR) \
-		-v $(BUILD_DIR)/go/pkg:$(CONTAINER_GO_DIR)/pkg \
+		-v $(CACHE_DIR)/go/pkg:$(CONTAINER_GO_DIR)/pkg \
 		registry.cn-beijing.aliyuncs.com/yunionio/telegraf-ci:1.16.6 \
-		/bin/bash -c "cd $(CONTAINER_TELEGRAF_DIR) && make deps && make package amd64=1 arm64=1"
+		/bin/bash -c "cd $(CONTAINER_TELEGRAF_DIR) && make clean && make deps && make package amd64=1 arm64=1"
