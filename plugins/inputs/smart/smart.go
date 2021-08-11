@@ -25,19 +25,23 @@ var (
 	// Device Model:     APPLE SSD SM256E
 	// Product:              HUH721212AL5204
 	// Model Number: TS128GMTE850
-	modelInfo = regexp.MustCompile("^(Device Model|Product|Model Number):\\s+(.*)$")
+	modelInfo = regexp.MustCompile(`^(Device Model|Product|Model Number):\s+(.*)$`)
 	// Serial Number:    S0X5NZBC422720
-	serialInfo = regexp.MustCompile("(?i)^Serial Number:\\s+(.*)$")
+	serialInfo = regexp.MustCompile(`(?i)^Serial Number:\s+(.*)$`)
 	// LU WWN Device Id: 5 002538 655584d30
-	wwnInfo = regexp.MustCompile("^LU WWN Device Id:\\s+(.*)$")
+	wwnInfo = regexp.MustCompile(`^LU WWN Device Id:\s+(.*)$`)
 	// User Capacity:    251,000,193,024 bytes [251 GB]
-	userCapacityInfo = regexp.MustCompile("^User Capacity:\\s+([0-9,]+)\\s+bytes.*$")
+	userCapacityInfo = regexp.MustCompile(`^User Capacity:\s+([0-9,]+)\s+bytes.*$`)
 	// SMART support is: Enabled
-	smartEnabledInfo = regexp.MustCompile("^SMART support is:\\s+(\\w+)$")
+	smartEnabledInfo = regexp.MustCompile(`^SMART support is:\s+(\w+)$`)
+	// Power mode is:    ACTIVE or IDLE or Power mode was:   STANDBY
+	powermodeInfo = regexp.MustCompile(`^Power mode \w+:\s+(\w+)`)
+	// Device is in STANDBY mode
+	standbyInfo = regexp.MustCompile(`^Device is in\s+(\w+)`)
 	// SMART overall-health self-assessment test result: PASSED
 	// SMART Health Status: OK
 	// PASSED, FAILED, UNKNOWN
-	smartOverallHealth = regexp.MustCompile("^(SMART overall-health self-assessment test result|SMART Health Status):\\s+(\\w+).*$")
+	smartOverallHealth = regexp.MustCompile(`^(SMART overall-health self-assessment test result|SMART Health Status):\s+(\w+).*$`)
 
 	// sasNvmeAttr is a SAS or NVME SMART attribute
 	sasNvmeAttr = regexp.MustCompile(`^([^:]+):\s+(.+)$`)
@@ -46,7 +50,7 @@ var (
 	//   1 Raw_Read_Error_Rate     -O-RC-   200   200   000    -    0
 	//   5 Reallocated_Sector_Ct   PO--CK   100   100   000    -    0
 	// 192 Power-Off_Retract_Count -O--C-   097   097   000    -    14716
-	attribute = regexp.MustCompile("^\\s*([0-9]+)\\s(\\S+)\\s+([-P][-O][-S][-R][-C][-K])\\s+([0-9]+)\\s+([0-9]+)\\s+([0-9-]+)\\s+([-\\w]+)\\s+([\\w\\+\\.]+).*$")
+	attribute = regexp.MustCompile(`^\s*([0-9]+)\s(\S+)\s+([-P][-O][-S][-R][-C][-K])\s+([0-9]+)\s+([0-9]+)\s+([0-9-]+)\s+([-\w]+)\s+([\w\+\.]+).*$`)
 
 	//  Additional Smart Log for NVME device:nvme0 namespace-id:ffffffff
 	//	key                               normalized raw
@@ -280,6 +284,8 @@ type Smart struct {
 	UseSudo          bool            `toml:"use_sudo"`
 	Timeout          config.Duration `toml:"timeout"`
 	Log              telegraf.Logger `toml:"-"`
+
+	userDevices []*SmartScanDevice
 }
 
 type nvmeDevice struct {
@@ -287,6 +293,11 @@ type nvmeDevice struct {
 	vendorID     string
 	model        string
 	serialNumber string
+}
+
+type SmartScanDevice struct {
+	Name string
+	Type string
 }
 
 var sampleConfig = `
@@ -378,16 +389,48 @@ func (m *Smart) Init() error {
 		m.Log.Warnf("nvme not found: verify that nvme is installed and it is in your PATH (or specified in config) to gather vendor specific attributes: %s", err.Error())
 	}
 
+	m.initUserDevices()
+
 	return nil
+}
+
+func (m *Smart) initUserDevices() {
+	devs := make([]*SmartScanDevice, 0)
+	if len(m.Devices) != 0 {
+		for _, devStr := range m.Devices {
+			dev, err := newSmartScanDeviceByString(devStr)
+			if err != nil {
+				continue
+			}
+			devs = append(devs, dev)
+		}
+	}
+	m.userDevices = devs
+}
+
+func newSmartScanDeviceByString(str string) (*SmartScanDevice, error) {
+	fields := strings.Fields(str)
+	dev := new(SmartScanDevice)
+	if len(fields) == 0 {
+		return dev, fmt.Errorf("invalid device string: %q", str)
+	}
+	if len(fields) >= 3 && fields[1] != "-d" {
+		return dev, fmt.Errorf("invalid device string: %q", str)
+	}
+	dev.Name = fields[0]
+	if len(fields) >= 3 {
+		dev.Type = fields[2]
+	}
+	return dev, nil
 }
 
 // Gather takes in an accumulator and adds the metrics that the SMART tools gather.
 func (m *Smart) Gather(acc telegraf.Accumulator) error {
 	var err error
-	var scannedNVMeDevices []string
-	var scannedNonNVMeDevices []string
+	var scannedNVMeDevices []*SmartScanDevice
+	var scannedNonNVMeDevices []*SmartScanDevice
 
-	devicesFromConfig := m.Devices
+	devicesFromConfig := m.userDevices
 	isNVMe := len(m.PathNVMe) != 0
 	isVendorExtension := len(m.EnableExtensions) != 0
 
@@ -410,7 +453,7 @@ func (m *Smart) Gather(acc telegraf.Accumulator) error {
 	if err != nil {
 		return err
 	}
-	var devicesFromScan []string
+	var devicesFromScan []*SmartScanDevice
 	devicesFromScan = append(devicesFromScan, scannedNVMeDevices...)
 	devicesFromScan = append(devicesFromScan, scannedNonNVMeDevices...)
 
@@ -421,7 +464,7 @@ func (m *Smart) Gather(acc telegraf.Accumulator) error {
 	return nil
 }
 
-func (m *Smart) scanAllDevices(ignoreExcludes bool) ([]string, []string, error) {
+func (m *Smart) scanAllDevices(ignoreExcludes bool) ([]*SmartScanDevice, []*SmartScanDevice, error) {
 	// this will return all devices (including NVMe devices) for smartctl version >= 7.0
 	// for older versions this will return non NVMe devices
 	devices, err := m.scanDevices(ignoreExcludes, "--scan")
@@ -440,13 +483,13 @@ func (m *Smart) scanAllDevices(ignoreExcludes bool) ([]string, []string, error) 
 	return NVMeDevices, nonNVMeDevices, nil
 }
 
-func distinguishNVMeDevices(userDevices []string, availableNVMeDevices []string) []string {
-	var NVMeDevices []string
+func distinguishNVMeDevices(userDevices []*SmartScanDevice, availableNVMeDevices []*SmartScanDevice) []*SmartScanDevice {
+	var NVMeDevices []*SmartScanDevice
 
 	for _, userDevice := range userDevices {
 		for _, NVMeDevice := range availableNVMeDevices {
 			// double check. E.g. in case when nvme0 is equal nvme0n1, will check if "nvme0" part is present.
-			if strings.Contains(NVMeDevice, userDevice) || strings.Contains(userDevice, NVMeDevice) {
+			if strings.Contains(NVMeDevice.Name, userDevice.Name) || strings.Contains(userDevice.Name, NVMeDevice.Name) {
 				NVMeDevices = append(NVMeDevices, userDevice)
 			}
 		}
@@ -455,25 +498,27 @@ func distinguishNVMeDevices(userDevices []string, availableNVMeDevices []string)
 }
 
 // Scan for S.M.A.R.T. devices from smartctl
-func (m *Smart) scanDevices(ignoreExcludes bool, scanArgs ...string) ([]string, error) {
+func (m *Smart) scanDevices(ignoreExcludes bool, scanArgs ...string) ([]*SmartScanDevice, error) {
 	out, err := runCmd(m.Timeout, m.UseSudo, m.PathSmartctl, scanArgs...)
 	if err != nil {
-		return []string{}, fmt.Errorf("failed to run command '%s %s': %s - %s", m.PathSmartctl, scanArgs, err, string(out))
+		return nil, fmt.Errorf("failed to run command '%s %s': %s - %s", m.PathSmartctl, scanArgs, err, string(out))
 	}
-	var devices []string
+
+	devices := make([]*SmartScanDevice, 0)
 	for _, line := range strings.Split(string(out), "\n") {
-		dev := strings.Split(line, " ")
-		if len(dev) <= 1 {
+		dev, _ := newSmartScanDeviceByString(line)
+		if len(dev.Name) == 0 {
 			continue
 		}
 		if !ignoreExcludes {
-			if !excludedDev(m.Excludes, strings.TrimSpace(dev[0])) {
-				devices = append(devices, strings.TrimSpace(dev[0]))
+			if !excludedDev(m.Excludes, dev.Name) {
+				devices = append(devices, dev)
 			}
 		} else {
-			devices = append(devices, strings.TrimSpace(dev[0]))
+			devices = append(devices, dev)
 		}
 	}
+
 	return devices, nil
 }
 
@@ -499,7 +544,7 @@ func excludedDev(excludes []string, deviceLine string) bool {
 }
 
 // Get info and attributes for each S.M.A.R.T. device
-func (m *Smart) getAttributes(acc telegraf.Accumulator, devices []string) {
+func (m *Smart) getAttributes(acc telegraf.Accumulator, devices []*SmartScanDevice) {
 	var wg sync.WaitGroup
 	wg.Add(len(devices))
 
@@ -510,7 +555,7 @@ func (m *Smart) getAttributes(acc telegraf.Accumulator, devices []string) {
 	wg.Wait()
 }
 
-func (m *Smart) getVendorNVMeAttributes(acc telegraf.Accumulator, devices []string) {
+func (m *Smart) getVendorNVMeAttributes(acc telegraf.Accumulator, devices []*SmartScanDevice) {
 	NVMeDevices := getDeviceInfoForNVMeDisks(acc, devices, m.PathNVMe, m.Timeout, m.UseSudo)
 
 	var wg sync.WaitGroup
@@ -530,7 +575,7 @@ func (m *Smart) getVendorNVMeAttributes(acc telegraf.Accumulator, devices []stri
 	wg.Wait()
 }
 
-func getDeviceInfoForNVMeDisks(acc telegraf.Accumulator, devices []string, nvme string, timeout config.Duration, useSudo bool) []nvmeDevice {
+func getDeviceInfoForNVMeDisks(acc telegraf.Accumulator, devices []*SmartScanDevice, nvme string, timeout config.Duration, useSudo bool) []nvmeDevice {
 	var NVMeDevices []nvmeDevice
 
 	for _, device := range devices {
@@ -540,7 +585,7 @@ func getDeviceInfoForNVMeDisks(acc telegraf.Accumulator, devices []string, nvme 
 			continue
 		}
 		newDevice := nvmeDevice{
-			name:         device,
+			name:         device.Name,
 			vendorID:     vid,
 			model:        mn,
 			serialNumber: sn,
@@ -550,9 +595,9 @@ func getDeviceInfoForNVMeDisks(acc telegraf.Accumulator, devices []string, nvme 
 	return NVMeDevices
 }
 
-func gatherNVMeDeviceInfo(nvme, device string, timeout config.Duration, useSudo bool) (string, string, string, error) {
+func gatherNVMeDeviceInfo(nvme string, device *SmartScanDevice, timeout config.Duration, useSudo bool) (string, string, string, error) {
 	args := []string{"id-ctrl"}
-	args = append(args, strings.Split(device, " ")...)
+	args = append(args, device.Name)
 	out, err := runCmd(timeout, useSudo, nvme, args...)
 	if err != nil {
 		return "", "", "", err
@@ -637,11 +682,14 @@ func gatherIntelNVMeDisk(acc telegraf.Accumulator, timeout config.Duration, uses
 	}
 }
 
-func gatherDisk(acc telegraf.Accumulator, timeout config.Duration, usesudo, collectAttributes bool, smartctl, nocheck, device string, wg *sync.WaitGroup) {
+func gatherDisk(acc telegraf.Accumulator, timeout config.Duration, usesudo, collectAttributes bool, smartctl, nocheck string, device *SmartScanDevice, wg *sync.WaitGroup) {
 	defer wg.Done()
 	// smartctl 5.41 & 5.42 have are broken regarding handling of --nocheck/-n
 	args := []string{"--info", "--health", "--attributes", "--tolerance=verypermissive", "-n", nocheck, "--format=brief"}
-	args = append(args, strings.Split(device, " ")...)
+	args = append(args, device.Name)
+	if device.Type != "" {
+		args = append(args, "-d", device.Type)
+	}
 	out, e := runCmd(timeout, usesudo, smartctl, args...)
 	outStr := string(out)
 
@@ -653,8 +701,11 @@ func gatherDisk(acc telegraf.Accumulator, timeout config.Duration, usesudo, coll
 	}
 
 	deviceTags := map[string]string{}
-	deviceNode := strings.Split(device, " ")[0]
+	deviceNode := strings.Split(device.Name, " ")[0]
 	deviceTags["device"] = path.Base(deviceNode)
+	if device.Type != "" {
+		deviceTags["device_type"] = device.Type
+	}
 	deviceFields := make(map[string]interface{})
 	deviceFields["exit_status"] = exitStatus
 
@@ -693,11 +744,24 @@ func gatherDisk(acc telegraf.Accumulator, timeout config.Duration, usesudo, coll
 			deviceFields["health_ok"] = health[2] == "PASSED" || health[2] == "OK"
 		}
 
+		// checks to see if there is a power mode to print to user
+		// if not look for Device is in STANDBY which happens when
+		// nocheck is set to standby (will exit to not spin up the disk)
+		// otherwise nothing is found so nothing is printed (NVMe does not show power)
+		if power := powermodeInfo.FindStringSubmatch(line); len(power) > 1 {
+			deviceTags["power"] = power[1]
+		} else {
+			if power := standbyInfo.FindStringSubmatch(line); len(power) > 1 {
+				deviceTags["power"] = power[1]
+			}
+		}
+
 		tags := map[string]string{}
 		fields := make(map[string]interface{})
 
 		if collectAttributes {
-			keys := [...]string{"device", "model", "serial_no", "wwn", "capacity", "enabled"}
+			//add power mode
+			keys := [...]string{"device", "model", "serial_no", "wwn", "capacity", "enabled", "power"}
 			for _, key := range keys {
 				if value, ok := deviceTags[key]; ok {
 					tags[key] = value
@@ -788,14 +852,14 @@ func contains(args []string, element string) bool {
 	return false
 }
 
-func difference(a, b []string) []string {
+func difference(a, b []*SmartScanDevice) []*SmartScanDevice {
 	mb := make(map[string]struct{}, len(b))
 	for _, x := range b {
-		mb[x] = struct{}{}
+		mb[x.Name] = struct{}{}
 	}
-	var diff []string
+	var diff []*SmartScanDevice
 	for _, x := range a {
-		if _, found := mb[x]; !found {
+		if _, found := mb[x.Name]; !found {
 			diff = append(diff, x)
 		}
 	}
