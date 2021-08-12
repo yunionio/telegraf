@@ -13,6 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func setUserDevices(s *Smart, devs ...string) {
+	s.Devices = devs
+	s.initUserDevices()
+}
+
 func TestGatherAttributes(t *testing.T) {
 	s := newSmart()
 	s.Attributes = true
@@ -46,7 +51,7 @@ func TestGatherAttributes(t *testing.T) {
 		s.PathNVMe = ""
 
 		t.Run("Only non nvme device", func(t *testing.T) {
-			s.Devices = []string{"/dev/ada0"}
+			setUserDevices(s, "/dev/ada0")
 			var acc testutil.Accumulator
 
 			err := s.Gather(&acc)
@@ -63,7 +68,7 @@ func TestGatherAttributes(t *testing.T) {
 			}
 		})
 		t.Run("Only nvme device", func(t *testing.T) {
-			s.Devices = []string{"/dev/nvme0"}
+			setUserDevices(s, "/dev/nvme0")
 			var acc testutil.Accumulator
 
 			err := s.Gather(&acc)
@@ -134,7 +139,7 @@ func TestGatherSATAInfo(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", new(SmartScanDevice), wg)
 	assert.Equal(t, 101, acc.NFields(), "Wrong number of fields gathered")
 	assert.Equal(t, uint64(20), acc.NMetrics(), "Wrong number of metrics gathered")
 }
@@ -150,7 +155,7 @@ func TestGatherSATAInfo65(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", new(SmartScanDevice), wg)
 	assert.Equal(t, 91, acc.NFields(), "Wrong number of fields gathered")
 	assert.Equal(t, uint64(18), acc.NMetrics(), "Wrong number of metrics gathered")
 }
@@ -166,7 +171,7 @@ func TestGatherHgstSAS(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", new(SmartScanDevice), wg)
 	assert.Equal(t, 6, acc.NFields(), "Wrong number of fields gathered")
 	assert.Equal(t, uint64(4), acc.NMetrics(), "Wrong number of metrics gathered")
 }
@@ -182,7 +187,7 @@ func TestGatherHtSAS(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", new(SmartScanDevice), wg)
 
 	testutil.RequireMetricsEqual(t, testHtsasAtributtes, acc.GetTelegrafMetrics(), testutil.SortMetrics(), testutil.IgnoreTime())
 }
@@ -198,7 +203,7 @@ func TestGatherSSD(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", new(SmartScanDevice), wg)
 	assert.Equal(t, 105, acc.NFields(), "Wrong number of fields gathered")
 	assert.Equal(t, uint64(26), acc.NMetrics(), "Wrong number of metrics gathered")
 }
@@ -214,7 +219,7 @@ func TestGatherSSDRaid(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", new(SmartScanDevice), wg)
 	assert.Equal(t, 74, acc.NFields(), "Wrong number of fields gathered")
 	assert.Equal(t, uint64(15), acc.NMetrics(), "Wrong number of metrics gathered")
 }
@@ -230,7 +235,7 @@ func TestGatherNvme(t *testing.T) {
 	)
 
 	wg.Add(1)
-	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "nvme0", wg)
+	gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", &SmartScanDevice{Name: "nvme0"}, wg)
 
 	testutil.RequireMetricsEqual(t, testSmartctlNvmeAttributes, acc.GetTelegrafMetrics(),
 		testutil.SortMetrics(), testutil.IgnoreTime())
@@ -268,9 +273,22 @@ func Test_findVIDFromNVMeOutput(t *testing.T) {
 	assert.Equal(t, "INTEL SSDPEDABCDEFG", mn)
 }
 
+func newDeviceByString(s string) *SmartScanDevice {
+	dev, _ := newSmartScanDeviceByString(s)
+	return dev
+}
+
+func newDevicesByString(ss ...string) []*SmartScanDevice {
+	devs := make([]*SmartScanDevice, len(ss))
+	for i, s := range ss {
+		devs[i] = newDeviceByString(s)
+	}
+	return devs
+}
+
 func Test_checkForNVMeDevices(t *testing.T) {
-	devices := []string{"sda1", "nvme0", "sda2", "nvme2"}
-	expectedNVMeDevices := []string{"nvme0", "nvme2"}
+	devices := newDevicesByString("sda1", "nvme0", "sda2", "nvme2")
+	expectedNVMeDevices := newDevicesByString("nvme0", "nvme2")
 	resultNVMeDevices := distinguishNVMeDevices(devices, expectedNVMeDevices)
 	assert.Equal(t, expectedNVMeDevices, resultNVMeDevices)
 }
@@ -284,9 +302,9 @@ func Test_contains(t *testing.T) {
 }
 
 func Test_difference(t *testing.T) {
-	devices := []string{"/dev/sda", "/dev/nvme1", "/dev/nvme2"}
-	secondDevices := []string{"/dev/sda", "/dev/nvme1"}
-	expected := []string{"/dev/nvme2"}
+	devices := newDevicesByString("/dev/sda", "/dev/nvme1", "/dev/nvme2")
+	secondDevices := newDevicesByString("/dev/sda", "/dev/nvme1")
+	expected := newDevicesByString("/dev/nvme2")
 	result := difference(devices, secondDevices)
 	assert.Equal(t, expected, result)
 }
@@ -303,7 +321,7 @@ func Test_integerOverflow(t *testing.T) {
 
 	t.Run("If data raw_value is out of int64 range, there should be no metrics for that attribute", func(t *testing.T) {
 		wg.Add(1)
-		gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", "nvme0", wg)
+		gatherDisk(acc, config.Duration(time.Second*30), true, true, "", "", newDeviceByString("nvme0"), wg)
 
 		result := acc.GetTelegrafMetrics()
 		testutil.RequireMetricsEqual(t, testOverflowAttributes, result,
