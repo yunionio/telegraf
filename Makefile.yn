@@ -11,7 +11,7 @@ container-packages:
 		registry.cn-beijing.aliyuncs.com/yunionio/telegraf-ci:1.16.6 \
 		/bin/bash -c "cd $(CONTAINER_TELEGRAF_DIR) && make clean && make deps && CGO_ENABLED=0 make package amd64=1 arm64=1 windows=1"
 
-TELEGRAF_VERSION = release-1.19.2-1
+TELEGRAF_VERSION = release-1.19.2-2
 docker-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \
 		-t registry.cn-beijing.aliyuncs.com/yunionio/telegraf:$(TELEGRAF_VERSION) -f ./scripts/Dockerfile.telegraf .
