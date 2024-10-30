@@ -15,9 +15,10 @@ type DiskStats struct {
 	// Legacy support
 	LegacyMountPoints []string `toml:"mountpoints"`
 
-	MountPoints       []string `toml:"mount_points"`
-	IgnoreMountPoints []string `toml:"ignore_mount_points"`
-	IgnoreFS          []string `toml:"ignore_fs"`
+	MountPoints        []string `toml:"mount_points"`
+	IgnoreMountPoints  []string `toml:"ignore_mount_points"`
+	IgnoreFS           []string `toml:"ignore_fs"`
+	IgnorePathSegments []string `toml:"ignore_path_segments"`
 }
 
 func (ds *DiskStats) Description() string {
@@ -53,6 +54,16 @@ func (ds *DiskStats) Gather(acc telegraf.Accumulator) error {
 	for i, du := range disks {
 		if du.Total == 0 {
 			// Skip dummy filesystem (procfs, cgroupfs, ...)
+			continue
+		}
+		shouldIgnore := false
+		for _, ips := range ds.IgnorePathSegments {
+			if strings.HasPrefix(du.Path, ips) {
+				shouldIgnore = true
+				break
+			}
+		}
+		if shouldIgnore {
 			continue
 		}
 		mountOpts := parseOptions(partitions[i].Opts)
