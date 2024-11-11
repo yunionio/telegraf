@@ -58,7 +58,7 @@ func (ds *DiskStats) Gather(acc telegraf.Accumulator) error {
 		}
 		shouldIgnore := false
 		for _, ips := range ds.IgnorePathSegments {
-			if strings.HasPrefix(du.Path, ips) {
+			if strings.Contains(du.Path, ips) {
 				shouldIgnore = true
 				break
 			}
