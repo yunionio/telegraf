@@ -90,7 +90,7 @@ deps:
 
 .PHONY: telegraf
 telegraf:
-	go build -ldflags "$(LDFLAGS)" ./cmd/telegraf
+	go build -ldflags "$(LDFLAGS)" -mod vendor ./cmd/telegraf
 
 # Used by dockerfile builds
 .PHONY: go-install
@@ -226,7 +226,7 @@ install: $(buildbin)
 # directory.
 $(buildbin):
 	@mkdir -pv $(dir $@)
-	go build -o $(dir $@) -ldflags "$(LDFLAGS)" ./cmd/telegraf
+	go build -mod vendor -o $(dir $@) -ldflags "$(LDFLAGS)" ./cmd/telegraf
 
 ifdef mips
 debs += telegraf_$(deb_version)_mips.deb

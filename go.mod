@@ -3,9 +3,9 @@ module github.com/influxdata/telegraf
 go 1.16
 
 require (
-	cloud.google.com/go v0.56.0
-	cloud.google.com/go/bigquery v1.4.0
-	cloud.google.com/go/pubsub v1.2.0
+	cloud.google.com/go v0.65.0
+	cloud.google.com/go/bigquery v1.8.0
+	cloud.google.com/go/pubsub v1.3.1
 	code.cloudfoundry.org/clock v1.0.0 // indirect
 	collectd.org v0.5.0
 	github.com/Azure/azure-event-hubs-go/v3 v3.2.0
@@ -32,6 +32,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.0.6
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.1.0
 	github.com/aws/smithy-go v1.3.1
+	github.com/beevik/etree v1.1.0 // indirect
 	github.com/benbjohnson/clock v1.0.3
 	github.com/bitly/go-hostpool v0.1.0 // indirect
 	github.com/bmatcuk/doublestar/v3 v3.0.0
@@ -47,6 +48,7 @@ require (
 	github.com/docker/docker v20.10.6+incompatible
 	github.com/dynatrace-oss/dynatrace-metric-utils-go v0.2.0
 	github.com/eclipse/paho.mqtt.golang v1.3.0
+	github.com/fatih/color v1.13.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logfmt/logfmt v0.5.0
@@ -59,7 +61,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/geo v0.0.0-20190916061304-5b978397cfec
-	github.com/golang/protobuf v1.5.1
+	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.3
 	github.com/google/go-cmp v0.5.5
 	github.com/google/go-github/v32 v32.1.0
@@ -88,11 +90,13 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/klauspost/compress v1.13.1 // indirect
 	github.com/lib/pq v1.3.0 // indirect
+	github.com/ma314smith/signedxml v0.0.0-20210628192057-abc5b481ae1c // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
 	github.com/mdlayher/apcupsd v0.0.0-20200608131503-2bf01da7bf1b
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/miekg/dns v1.1.31
 	github.com/moby/ipvs v1.0.1
+	github.com/mozillazg/go-pinyin v0.19.0 // indirect
 	github.com/multiplay/go-ts3 v1.0.0
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/nats-io/nats-server/v2 v2.2.6
@@ -103,10 +107,10 @@ require (
 	github.com/openzipkin/zipkin-go-opentracing v0.3.4
 	github.com/pion/dtls/v2 v2.0.9
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.15.0
-	github.com/prometheus/procfs v0.6.0
+	github.com/prometheus/common v0.32.1
+	github.com/prometheus/procfs v0.7.3
 	github.com/prometheus/prometheus v1.8.2-0.20200911110723-e83ef207b6c2
 	github.com/riemann/riemann-go-client v0.5.0
 	github.com/safchain/ethtool v0.0.0-20200218184317-f459e2d13664
@@ -115,6 +119,7 @@ require (
 	github.com/shopspring/decimal v0.0.0-20200105231215-408a2507e114 // indirect
 	github.com/signalfx/golib/v3 v3.3.34
 	github.com/sirupsen/logrus v1.7.0
+	github.com/smartystreets/goconvey v1.7.2 // indirect
 	github.com/snowflakedb/gosnowflake v1.5.0
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/stretchr/testify v1.7.0
@@ -123,6 +128,8 @@ require (
 	github.com/tidwall/gjson v1.8.0
 	github.com/tinylib/msgp v1.1.5
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
+	github.com/tredoe/osutil v1.5.0 // indirect
+	github.com/tredoe/osutil/v2 v2.0.0-rc.16 // indirect
 	github.com/vapourismo/knx-go v0.0.0-20201122213738-75fe09ace330
 	github.com/vjeantet/grok v1.0.1
 	github.com/vmware/govmomi v0.19.0
@@ -136,14 +143,14 @@ require (
 	go.starlark.net v0.0.0-20210406145628-7a1108eaa012
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	golang.org/x/net v0.0.0-20210331212208-0fccb6fa2b5c
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
+	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
 	golang.org/x/text v0.3.6
 	golang.org/x/tools v0.1.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20200205215550-e35592f146e4
-	google.golang.org/api v0.29.0
+	google.golang.org/api v0.30.0
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a
 	google.golang.org/grpc v1.37.0
 	gopkg.in/djherbis/times.v1 v1.2.0
@@ -158,6 +165,11 @@ require (
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.20.4
 	modernc.org/sqlite v1.10.8
+	moul.io/http2curl/v2 v2.3.0 // indirect
+	yunion.io/x/executor v0.0.0-20230705125604-c5ac3141db32
+	yunion.io/x/jsonutils v1.0.0
+	yunion.io/x/log v1.0.0
+	yunion.io/x/pkg v1.0.0
 )
 
 // replaced due to https://github.com/satori/go.uuid/issues/73

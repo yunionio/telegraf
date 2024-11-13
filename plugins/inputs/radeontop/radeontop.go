@@ -3,8 +3,6 @@ package radeontop
 import (
 	"fmt"
 	"math"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +11,7 @@ import (
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
-	"github.com/influxdata/telegraf/internal"
+	"github.com/influxdata/telegraf/internal/procutils"
 	"github.com/influxdata/telegraf/plugins/inputs"
 )
 
@@ -52,8 +50,8 @@ func (rtp *Radeontop) SampleConfig() string {
 }
 
 func (rtp *Radeontop) Gather(acc telegraf.Accumulator) error {
-	if _, err := os.Stat(rtp.BinPath); os.IsNotExist(err) {
-		return fmt.Errorf("radeontop binary not at path %s, cannot gather GPU data", rtp.BinPath)
+	if _, err := procutils.IsRemoteFileExist(rtp.BinPath); err != nil {
+		return err
 	}
 
 	if len(rtp.DevicePaths) == 0 {
@@ -91,9 +89,10 @@ func (rtp *Radeontop) getDeviceResult(devPath string) (*result, error) {
 }
 
 func (rtp *Radeontop) pollData(devPath string) ([]byte, error) {
-	ret, err := internal.CombinedOutputTimeout(
-		exec.Command(rtp.BinPath, "-p", devPath, "-l", "1", "-d", "-"),
-		time.Duration(rtp.Timeout))
+	//ret, err := internal.CombinedOutputTimeout(
+	//	exec.Command(rtp.BinPath, "-p", devPath, "-l", "1", "-d", "-"),
+	//	time.Duration(rtp.Timeout))
+	ret, err := procutils.NewRemoteCommandAsFarAsPossible(rtp.BinPath, "-p", devPath, "-l", "1", "-d", "-").Output()
 	if err != nil {
 		return nil, errors.Wrapf(err, "radeontop polling %s failed, out: %s", devPath, ret)
 	}

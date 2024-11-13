@@ -1,6 +1,12 @@
 package all
 
 import (
+	"os"
+
+	execclient "yunion.io/x/executor/client"
+	"yunion.io/x/log"
+
+	"github.com/influxdata/telegraf/internal/procutils"
 	//Blank imports for plugins to register themselves
 	_ "github.com/influxdata/telegraf/plugins/inputs/activemq"
 	// _ "github.com/influxdata/telegraf/plugins/inputs/aerospike"
@@ -205,3 +211,17 @@ import (
 	// _ "github.com/influxdata/telegraf/plugins/inputs/zipkin"
 	_ "github.com/influxdata/telegraf/plugins/inputs/zookeeper"
 )
+
+const (
+	OnecloudExecSockPath = "/hostfs/run/onecloud/exec.sock"
+)
+
+func init() {
+	log.SetLogLevelByString(log.Logger(), "info")
+	if _, err := os.Stat(OnecloudExecSockPath); err == nil {
+		log.Infof("init onecloud executor client, socket path: %s", OnecloudExecSockPath)
+		execclient.Init("")
+		execclient.SetTimeoutSeconds(5)
+		procutils.SetRemoteExecutor()
+	}
+}

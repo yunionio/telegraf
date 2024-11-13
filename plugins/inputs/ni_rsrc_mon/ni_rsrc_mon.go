@@ -3,8 +3,6 @@ package ni_rsrc_mon
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -12,7 +10,7 @@ import (
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
-	"github.com/influxdata/telegraf/internal"
+	"github.com/influxdata/telegraf/internal/procutils"
 	"github.com/influxdata/telegraf/plugins/inputs"
 )
 
@@ -47,8 +45,8 @@ func (n niRsrcMon) Description() string {
 }
 
 func (n niRsrcMon) Gather(accumulator telegraf.Accumulator) error {
-	if _, err := os.Stat(n.BinPath); os.IsNotExist(err) {
-		return fmt.Errorf("ni_rsrc_mon binary not at path %s, cannot gather netint device data", n.BinPath)
+	if _, err := procutils.IsRemoteFileExist(n.BinPath); err != nil {
+		return err
 	}
 	results, err := n.pollMetrics()
 	if err != nil {
@@ -176,9 +174,10 @@ func (rs *Results) GetResults() []IResult {
 }
 
 func (n niRsrcMon) pollMetrics() (*Results, error) {
-	ret, err := internal.CombinedOutputTimeout(
-		exec.Command(n.BinPath, "-o", "json1"),
-		time.Duration(n.Timeout))
+	//ret, err := internal.CombinedOutputTimeout(
+	//	exec.Command(n.BinPath, "-o", "json1"),
+	//	time.Duration(n.Timeout))
+	ret, err := procutils.NewRemoteCommandAsFarAsPossible(n.BinPath, "-o", "json1").Output()
 	if err != nil {
 		return nil, errors.Wrapf(err, "out: %s", ret)
 	}

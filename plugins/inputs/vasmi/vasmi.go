@@ -3,8 +3,6 @@ package vasmi
 import (
 	"fmt"
 	"math"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +11,7 @@ import (
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
-	"github.com/influxdata/telegraf/internal"
+	"github.com/influxdata/telegraf/internal/procutils"
 	"github.com/influxdata/telegraf/plugins/inputs"
 )
 
@@ -48,8 +46,8 @@ func (v vasmi) Description() string {
 }
 
 func (v vasmi) Gather(acc telegraf.Accumulator) error {
-	if _, err := os.Stat(v.BinPath); os.IsNotExist(err) {
-		return fmt.Errorf("vasmi binary not at path %s, cannot gather GPU data", v.BinPath)
+	if _, err := procutils.IsRemoteFileExist(v.BinPath); err != nil {
+		return err
 	}
 	results, err := v.pollMetrics()
 	if err != nil {
@@ -196,9 +194,10 @@ func newDevice(devParts []string) (*Device, error) {
 }
 
 func (v vasmi) pollMetrics() ([]*AIC, error) {
-	ret, err := internal.CombinedOutputTimeout(
-		exec.Command(v.BinPath, "dmon", "--loop", "1"),
-		time.Duration(v.Timeout))
+	//ret, err := internal.CombinedOutputTimeout(
+	//	exec.Command(v.BinPath, "dmon", "--loop", "1"),
+	//	time.Duration(v.Timeout))
+	ret, err := procutils.NewRemoteCommandAsFarAsPossible(v.BinPath, "dmon", "--loop", "1").Output()
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s dmon --loop 1: %s", v.BinPath, ret)
 	}
