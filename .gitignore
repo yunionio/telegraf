@@ -3,7 +3,7 @@
 /telegraf
 /telegraf.exe
 /telegraf.gz
-/vendor
+#/vendor
 .DS_Store
 process.yml
 _cache

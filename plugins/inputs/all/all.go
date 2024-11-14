@@ -1,6 +1,12 @@
 package all
 
 import (
+	"os"
+
+	execclient "yunion.io/x/executor/client"
+	"yunion.io/x/log"
+
+	"github.com/influxdata/telegraf/internal/procutils"
 	//Blank imports for plugins to register themselves
 	_ "github.com/influxdata/telegraf/plugins/inputs/activemq"
 	// _ "github.com/influxdata/telegraf/plugins/inputs/aerospike"
@@ -122,12 +128,15 @@ import (
 	_ "github.com/influxdata/telegraf/plugins/inputs/nginx_sts"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nginx_upstream_check"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nginx_vts"
+	_ "github.com/influxdata/telegraf/plugins/inputs/ni_rsrc_mon"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nsd"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nsq"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nsq_consumer"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nstat"
 	_ "github.com/influxdata/telegraf/plugins/inputs/ntpq"
 	_ "github.com/influxdata/telegraf/plugins/inputs/nvidia_smi"
+	_ "github.com/influxdata/telegraf/plugins/inputs/radeontop"
+	_ "github.com/influxdata/telegraf/plugins/inputs/vasmi"
 	// _ "github.com/influxdata/telegraf/plugins/inputs/opcua"
 	// _ "github.com/influxdata/telegraf/plugins/inputs/openldap"
 	// _ "github.com/influxdata/telegraf/plugins/inputs/openntpd"
@@ -202,3 +211,17 @@ import (
 	// _ "github.com/influxdata/telegraf/plugins/inputs/zipkin"
 	_ "github.com/influxdata/telegraf/plugins/inputs/zookeeper"
 )
+
+const (
+	OnecloudExecSockPath = "/hostfs/run/onecloud/exec.sock"
+)
+
+func init() {
+	log.SetLogLevelByString(log.Logger(), "info")
+	if _, err := os.Stat(OnecloudExecSockPath); err == nil {
+		log.Infof("init onecloud executor client, socket path: %s", OnecloudExecSockPath)
+		execclient.Init(OnecloudExecSockPath)
+		execclient.SetTimeoutSeconds(5)
+		procutils.SetRemoteExecutor()
+	}
+}
