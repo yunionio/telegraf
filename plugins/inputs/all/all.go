@@ -220,7 +220,7 @@ func init() {
 	log.SetLogLevelByString(log.Logger(), "info")
 	if _, err := os.Stat(OnecloudExecSockPath); err == nil {
 		log.Infof("init onecloud executor client, socket path: %s", OnecloudExecSockPath)
-		execclient.Init("")
+		execclient.Init(OnecloudExecSockPath)
 		execclient.SetTimeoutSeconds(5)
 		procutils.SetRemoteExecutor()
 	}
