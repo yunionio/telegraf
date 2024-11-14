@@ -169,6 +169,7 @@ func (r result) getFields() map[string]interface{} {
 		"gtt_used":                                r.GTTUsedSizeMB,
 		"utilization_gpu":                         r.GPU,
 		"utilization_memory":                      r.VRAM,
+		"utilization_gtt":                         r.GTT,
 		"utilization_event_engine":                r.EventEngine,
 		"utilization_vertex_grouper_tesselator":   r.VertexGrouperTesselator,
 		"utilization_texture_addresser":           r.TextureAddresser,
