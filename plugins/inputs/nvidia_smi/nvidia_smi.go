@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -41,7 +42,13 @@ func (smi *NvidiaSMI) SampleConfig() string {
 
 // Gather implements the telegraf interface
 func (smi *NvidiaSMI) Gather(acc telegraf.Accumulator) error {
-	if _, err := os.Stat(smi.BinPath); os.IsNotExist(err) {
+	hostMountPrefix := os.Getenv("HOST_MOUNT_PREFIX")
+	binPath := smi.BinPath
+	if len(hostMountPrefix) > 0 {
+		binPath = path.Join(hostMountPrefix, binPath)
+	}
+
+	if _, err := os.Stat(binPath); os.IsNotExist(err) {
 		return fmt.Errorf("nvidia-smi binary not at path %s, cannot gather GPU data", smi.BinPath)
 	}
 
@@ -68,8 +75,13 @@ func init() {
 }
 
 func (smi *NvidiaSMI) pollSMI() ([]byte, error) {
+	hostMountPrefix := os.Getenv("HOST_MOUNT_PREFIX")
+	cmds := []string{smi.BinPath, "-q", "-x"}
+	if len(hostMountPrefix) > 0 {
+		cmds = []string {"chroot", hostMountPrefix, smi.BinPath, "-q", "-x"}
+	}
 	// Construct and execute metrics query
-	ret, err := internal.CombinedOutputTimeout(exec.Command(smi.BinPath, "-q", "-x"), time.Duration(smi.Timeout))
+	ret, err := internal.CombinedOutputTimeout(exec.Command(cmds[0], cmds[1:]...), time.Duration(smi.Timeout))
 	if err != nil {
 		return nil, err
 	}
