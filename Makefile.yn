@@ -2,6 +2,8 @@ CACHE_DIR = $(CURDIR)/_cache
 BUILD_DIR = $(CURDIR)/build
 CONTAINER_GO_DIR = /go
 CONTAINER_TELEGRAF_DIR = $(CONTAINER_GO_DIR)/src/github.com/influxdata/telegraf
+REGISTRY ?= "registry.cn-beijing.aliyuncs.com/yunionio"
+DOCKER_BUILDX = docker buildx build --platform linux/arm64,linux/amd64 --push -t $(REGISTRY)
 
 container-packages:
 	docker run --rm \
@@ -18,3 +20,8 @@ docker-image:
 		-t registry.cn-beijing.aliyuncs.com/yunionio/telegraf:$(TELEGRAF_VERSION) -f ./scripts/Dockerfile.telegraf .
 
 docker-build-image: container-packages docker-image
+
+FILE_REPO_VERSION = v0.5.0
+
+file-repo:
+	$(DOCKER_BUILDX)/file-repo:$(FILE_REPO_VERSION) -f ./Dockerfile.file-repo .
