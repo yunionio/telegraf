@@ -84,6 +84,9 @@ func roundFloat(f float64) float64 {
 }
 
 func getFloatValue(value string) (float64, error) {
+	if value == "N/A" {
+		return 0.0, nil
+	}
 	result, err := strconv.ParseFloat(value, 32)
 	if err != nil {
 		return 0, fmt.Errorf("wrong value for %s: %v", value, err)
