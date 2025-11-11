@@ -21,10 +21,10 @@ package umoci
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/apex/log"
+	"github.com/containerd/platforms"
 	imeta "github.com/opencontainers/image-spec/specs-go"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -33,7 +33,7 @@ import (
 )
 
 // NewImage creates a new empty image (tag) in the existing layout.
-func NewImage(engineExt casext.Engine, tagName string) error {
+func NewImage(engineExt casext.Engine, tagName string, sourceDateEpoch *time.Time) error {
 	// Create a new manifest.
 	log.WithFields(log.Fields{
 		"tag": tagName,
@@ -42,12 +42,17 @@ func NewImage(engineExt casext.Engine, tagName string) error {
 	// Create a new image config.
 	g := igen.New()
 	createTime := time.Now()
+	if sourceDateEpoch != nil {
+		createTime = *sourceDateEpoch
+	}
 
-	// Set all of the defaults we need.
 	g.SetCreated(createTime)
-	g.SetOS(runtime.GOOS)
-	g.SetArchitecture(runtime.GOARCH)
 	g.ClearHistory()
+
+	hostPlatform := platforms.DefaultSpec()
+	g.SetPlatformOS(hostPlatform.OS)
+	g.SetPlatformArchitecture(hostPlatform.Architecture)
+	g.SetPlatformVariant(hostPlatform.Variant)
 
 	// Make sure we have no diffids.
 	g.SetRootfsType("layers")

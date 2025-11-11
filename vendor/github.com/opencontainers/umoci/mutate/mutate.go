@@ -27,8 +27,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"reflect"
+	"maps"
 	"time"
+
+	"github.com/apex/log"
+	"github.com/opencontainers/go-digest"
+	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/opencontainers/umoci/internal/funchelpers"
 	"github.com/opencontainers/umoci/internal/iohelpers"
@@ -36,10 +40,6 @@ import (
 	"github.com/opencontainers/umoci/oci/casext"
 	"github.com/opencontainers/umoci/oci/casext/blobcompress"
 	"github.com/opencontainers/umoci/oci/casext/mediatype"
-
-	"github.com/apex/log"
-	"github.com/opencontainers/go-digest"
-	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // UmociUncompressedBlobSizeAnnotation is an umoci-specific annotation to
@@ -85,19 +85,25 @@ type Mutator struct {
 type Meta struct {
 	// Created defines an ISO-8601 formatted combined date and time at which
 	// the image was created.
-	Created time.Time `json:"created,omitempty"`
+	Created time.Time `json:"created,omitzero"`
 
 	// Author defines the name and/or email address of the person or entity
 	// which created and is responsible for maintaining the image.
-	Author string `json:"author,omitempty"`
+	Author string `json:"author,omitzero"`
 
 	// Architecture is the CPU architecture which the binaries in this image
 	// are built to run on.
 	Architecture string `json:"architecture"`
 
+	// Variant is the variant of the CPU architecture which the binaries in
+	// this image are built to run on.
+	Variant string `json:"variant"`
+
 	// OS is the name of the operating system which the image is built to run
 	// on.
 	OS string `json:"os"`
+
+	// TODO: Should we embed ispec.Platform?
 }
 
 // cache ensures that the cached versions of the related configurations have
@@ -207,9 +213,7 @@ func (m *Mutator) Annotations(ctx context.Context) (map[string]string, error) {
 	}
 
 	annotations := map[string]string{}
-	for k, v := range m.manifest.Annotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, m.manifest.Annotations)
 	return annotations, nil
 }
 
@@ -234,6 +238,7 @@ func (m *Mutator) Set(ctx context.Context, config ispec.ImageConfig, meta Meta, 
 	m.config.Created = timePtr(meta.Created)
 	m.config.Author = meta.Author
 	m.config.Architecture = meta.Architecture
+	m.config.Variant = meta.Variant
 	m.config.OS = meta.OS
 
 	// Append history.
@@ -412,9 +417,22 @@ func (m *Mutator) Commit(ctx context.Context) (_ casext.DescriptorPath, Err erro
 		oldDesc := m.source.Walk[idx]
 		newDesc := newPath.Walk[idx]
 		if err := casext.MapDescriptors(parentBlob.Data, func(d ispec.Descriptor) ispec.Descriptor {
-			// XXX: Maybe we should just be comparing the Digest?
-			if reflect.DeepEqual(d, oldDesc) {
-				d = newDesc
+			if d.Digest == oldDesc.Digest {
+				// In principle you should never be in a situation where two
+				// descriptors reference the same data with different
+				// media-types. This lead to CVE-2021-41190.
+				if d.MediaType != oldDesc.MediaType {
+					log.Warnf("mutate: found inconsistent media-type usage during DescriptorPath rewriting (found descriptor for blob %s with both %s and %s media-types)",
+						oldDesc.Digest, oldDesc.MediaType, d.MediaType)
+				}
+				// Replace the digest+size with the new blob.
+				d.Digest = newDesc.Digest
+				d.Size = newDesc.Size
+				// Copy the embedded data for the new descriptor (if any).
+				d.Data = newDesc.Data
+				// Do not touch any other bits in case the same blob is being
+				// referenced with different annotations or platform
+				// configurations.
 			}
 			return d
 		}); err != nil {
@@ -432,6 +450,9 @@ func (m *Mutator) Commit(ctx context.Context) (_ casext.DescriptorPath, Err erro
 		// Update the key parts of the descriptor.
 		newPath.Walk[idx-1].Digest = blobDigest
 		newPath.Walk[idx-1].Size = blobSize
+		// Clear the embedded data (if present).
+		// TODO: Auto-embed data if it is reasonably small.
+		newPath.Walk[idx-1].Data = nil
 	}
 
 	return newPath, nil

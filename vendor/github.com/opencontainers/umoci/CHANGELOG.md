@@ -14,6 +14,84 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] ##
 
+## [0.6.0] - 2025-10-15 ##
+
+> Please mind the gap between the train and the platform.
+
+This update to umoci includes support for v1.1.1 of the OCI image
+specification. For the most part, this mostly involves supporting reading new
+features added to the specification (such as embedded-data descriptors and
+subject references used by OCI artifact images), but at the moment umoci does
+not yet support creating images utilising these features.
+
+In addition, umoci also now supports generating `config.json` blobs that are
+compliant with v1.2.1 of the OCI runtime specification. Note that we do not
+explicitly use any of the newer features, this is mostly a quality-of-life
+update to move away from our ancient pinned version of the runtime-spec.
+
+### Breaking ###
+* `github.com/opencontainers/umoci/oci/config/generate.Generator` has had the
+  following breaking API changes made to it:
+  - The existing `ConfigExposedPorts` and `ConfigVolumes` methods now return a
+    sorted `[]string` instead of a `map`.
+  - The `(Set)OS` and `(Set)Architecture` methods have been renamed to have a
+    `Platform` prefix (to match image-spec v1.1's organisational changes). They
+    now read as `(Set)PlatformOS` and `(Set)PlatformArchitecture` respectively.
+
+### Added ###
+* `umoci stat` now includes information about the manifest and configuration of
+  the image, both in the regular and JSON-formatted outputs.
+* umoci now has [`SOURCE_DATE_EPOCH`][source-date-epoch] support, to attempt to
+  make it easier to create reproducible images. Our behaviour is modelled after
+  `tar --clamp-mtime`, meaning that `SOURCE_DATE_EPOCH` will only be used to
+  modify the timestamps of files **newer** than `SOURCE_DATE_EPOCH`.
+
+  As `umoci repack` works based on diffs, this also means that only files that
+  were modified (and will thus be usually be included in the new layer) will
+  have their timestamps rewritten.
+
+  `--history.created` and `umoci config --created` will also now default to
+  `SOURCE_DATE_EPOCH` (if set).
+
+  With this change, umoci should be fairly compliant with reproducible builds.
+  Please let us know if you find any other problematic areas in umoci (we are
+  investigating some other possible causes of instability such as Go map
+  iteration).
+* In order to avoid the need for a [patched `gomtree` package][obs-gomtree]
+  that supports rootless mode, umoci now has a `umoci raw mtree-validate`
+  subcommand that implements the key `gomtree validate` features we need for
+  our integration tests.
+
+  Note that this subcommand is not intended for wider use outside of our tests
+  (and it is hidden from the help pages for a reason). Most users are probably
+  better off just using `gomtree`.
+* `umoci --version` now provides more information about the specification
+  versions supported by the `umoci` binary as well as the Go version used.
+* `umoci config` now supports specifying the architecture variant of the image
+  with `--platform.variant`. In addition, `--os` and `--architecture` can now
+  be set using `--platform.os` and `--platform.arch` respectively.
+* `umoci new` will not automatically fill the architecture variant on ARM
+  systems to match the host CPU.
+
+### Changed ###
+* The output format of `umoci stat` has had some minor changes made to how
+  special characters are escaped and when quoting is carried out.
+
+### Fixed ###
+* Some minor aspects of how `umoci stat` would filter special characters in
+  history entries have been resolved.
+* `umoci repack` will now truncate the `mtime` of files added to the layer tar
+  archives. Previously, we would defer to the Go stdlib's `archive/tar` which
+  rounds to the nearest second (which is incompatible with `gomtree` and so in
+  theory could lead to inconsistent results).
+* Previously, when generating the runtime-spec `config.json`, `umoci unpack`
+  would incorrectly prioritise the automatically generated annotations over
+  explicitly configured labels. This precdence was the opposite of what the
+  image-spec requires, and has now been resolved.
+
+[source-date-epoch]: https://reproducible-builds.org/docs/source-date-epoch/
+[obs-gomtree]: https://build.opensuse.org/package/show/Virtualization:containers/go-mtree
+
 ## [0.5.1] - 2025-09-05 ##
 
 > 🖤 Yuki (2021-2025)
@@ -748,7 +826,8 @@ systems.
   + `repack`
   + `config`
 
-[Unreleased]: https://github.com/opencontainers/umoci/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/opencontainers/umoci/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/opencontainers/umoci/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/opencontainers/umoci/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/opencontainers/umoci/compare/v0.4.7...v0.5.0
 [0.4.7]: https://github.com/opencontainers/umoci/compare/v0.4.6...v0.4.7

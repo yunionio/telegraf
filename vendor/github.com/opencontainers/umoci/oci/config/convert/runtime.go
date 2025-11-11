@@ -20,6 +20,7 @@ package convert
 
 import (
 	"fmt"
+	"maps"
 	"path/filepath"
 	"strings"
 
@@ -36,12 +37,13 @@ import (
 // in an image configuration that do not have a native representation in the
 // runtime-spec).
 const (
-	osAnnotation           = "org.opencontainers.image.os"
-	archAnnotation         = "org.opencontainers.image.architecture"
-	authorAnnotation       = "org.opencontainers.image.author"
-	createdAnnotation      = "org.opencontainers.image.created"
-	stopSignalAnnotation   = "org.opencontainers.image.stopSignal"
-	exposedPortsAnnotation = "org.opencontainers.image.exposedPorts"
+	platformOsAnnotation      = "org.opencontainers.image.os"
+	platformArchAnnotation    = "org.opencontainers.image.architecture"
+	platformVariantAnnotation = "org.opencontainers.image.variant"
+	authorAnnotation          = "org.opencontainers.image.author"
+	createdAnnotation         = "org.opencontainers.image.created"
+	stopSignalAnnotation      = "org.opencontainers.image.stopSignal"
+	exposedPortsAnnotation    = "org.opencontainers.image.exposedPorts"
 )
 
 // ToRuntimeSpec converts the given OCI image configuration to a runtime
@@ -106,14 +108,16 @@ func allocateNilStruct(spec *rspec.Spec) {
 }
 
 // MutateRuntimeSpec mutates a given runtime configuration with the image
-// configuration provided.
+// configuration provided in accordance with the image specification's
+// conversion mechanism (for more information, see
+// <https://github.com/opencontainers/image-spec/blob/main/conversion.md>).
 func MutateRuntimeSpec(spec *rspec.Spec, rootfs string, image ispec.Image) error {
 	ig, err := igen.NewFromImage(image)
 	if err != nil {
 		return fmt.Errorf("creating image generator: %w", err)
 	}
 
-	if ig.OS() != "linux" {
+	if ig.PlatformOS() != "linux" {
 		return fmt.Errorf("unsupported OS: %s", image.OS)
 	}
 
@@ -163,15 +167,23 @@ func MutateRuntimeSpec(spec *rspec.Spec, rootfs string, image ispec.Image) error
 		spec.Process.Args = args
 	}
 
-	// Set annotations fields
-	for key, value := range ig.ConfigLabels() {
-		spec.Annotations[key] = value
+	// Set the "annotation fields".
+	setAnnotation := func(name, value string) {
+		if value != "" {
+			spec.Annotations[name] = value
+		} else {
+			delete(spec.Annotations, name)
+		}
 	}
-	spec.Annotations[osAnnotation] = ig.OS()
-	spec.Annotations[archAnnotation] = ig.Architecture()
-	spec.Annotations[authorAnnotation] = ig.Author()
-	spec.Annotations[createdAnnotation] = ig.Created().Format(igen.ISO8601)
-	spec.Annotations[stopSignalAnnotation] = image.Config.StopSignal
+	setAnnotation(platformOsAnnotation, ig.PlatformOS())
+	setAnnotation(platformArchAnnotation, ig.PlatformArchitecture())
+	setAnnotation(platformVariantAnnotation, ig.PlatformVariant())
+	setAnnotation(authorAnnotation, ig.Author())
+	setAnnotation(createdAnnotation, ig.Created().Format(igen.ISO8601))
+	setAnnotation(stopSignalAnnotation, image.Config.StopSignal)
+	setAnnotation(exposedPortsAnnotation, strings.Join(ig.ConfigExposedPorts(), ","))
+	// Config.Labels need to be applied after the auto-applied labels.
+	maps.Copy(spec.Annotations, ig.ConfigLabels())
 
 	// Set parsed fields
 	// Get the *actual* uid and gid of the user. If the image doesn't contain
@@ -205,11 +217,7 @@ func MutateRuntimeSpec(spec *rspec.Spec, rootfs string, image ispec.Image) error
 		appendEnv(&spec.Process.Env, "HOME", execUser.Home)
 	}
 
-	// Set optional fields
-	ports := ig.ConfigExposedPortsArray()
-	spec.Annotations[exposedPortsAnnotation] = strings.Join(ports, ",")
-
-	for vol := range ig.ConfigVolumes() {
+	for _, vol := range ig.ConfigVolumes() {
 		// XXX: This is _fine_ but might cause some issues in the future.
 		spec.Mounts = append(spec.Mounts, rspec.Mount{
 			Destination: vol,

@@ -19,6 +19,7 @@
 package mediatype
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,6 +28,10 @@ import (
 	"sync"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/opencontainers/umoci/internal/assert"
+
+	"github.com/opencontainers/umoci/internal"
 )
 
 // ErrNilReader is returned by the parsers in this package when they are called
@@ -45,7 +50,7 @@ var ErrNilReader = errors.New("")
 // order to determine the type of the struct (thus you must return the same
 // struct you would return in a non-nil reader scenario). Go doesn't have a way
 // for us to enforce this.
-type ParseFunc func(io.Reader) (interface{}, error)
+type ParseFunc func(io.Reader) (any, error)
 
 var (
 	lock sync.RWMutex
@@ -94,10 +99,7 @@ func RegisterParser(mediaType string, parser ParseFunc) {
 	// Ensure the returned type is actually a struct. Ideally we would detect
 	// this with generics but this seems to not be possible with Go generics
 	// (circa Go 1.20).
-	if t.Kind() != reflect.Struct {
-		// This should never happen, and is a programmer bug.
-		panic("parser given to RegisterParser doesn't return a struct{}")
-	}
+	assert.Assert(t.Kind() == reflect.Struct, "parser given to RegisterParser doesn't return a struct{}") // programmer bug
 
 	// Register the parser and package.
 	lock.Lock()
@@ -106,10 +108,7 @@ func RegisterParser(mediaType string, parser ParseFunc) {
 	packages[t.PkgPath()] = struct{}{}
 	lock.Unlock()
 
-	if old {
-		// This should never happen, and is a programmer bug.
-		panic("RegisterParser() called with already-registered media-type: " + mediaType)
-	}
+	assert.Assertf(!old, "RegisterParser() called with already-registered media-type: %s", mediaType) // programmer bug
 }
 
 // IsTarget returns whether the given media-type should be treated as a "target
@@ -145,7 +144,7 @@ func RegisterTarget(mediaType string) {
 // But also handling the rdr == nil case which is needed for RegisterParser to
 // correctly detect what type T is. T must be a struct (this is verified by
 // RegisterParser).
-func JSONParser[T any](rdr io.Reader) (_ interface{}, err error) {
+func JSONParser[T any](rdr io.Reader) (_ any, err error) {
 	var v T
 	if rdr != nil {
 		err = json.NewDecoder(rdr).Decode(&v)
@@ -156,7 +155,7 @@ func JSONParser[T any](rdr io.Reader) (_ interface{}, err error) {
 	return v, err
 }
 
-func indexParser(rdr io.Reader) (interface{}, error) {
+func indexParser(rdr io.Reader) (any, error) {
 	// Construct a fake struct which contains fields that shouldn't exist, to
 	// detect images that have maliciously-inserted fields. CVE-2021-41190
 	var index struct {
@@ -183,7 +182,7 @@ func indexParser(rdr io.Reader) (interface{}, error) {
 	return index.Index, nil
 }
 
-func manifestParser(rdr io.Reader) (interface{}, error) {
+func manifestParser(rdr io.Reader) (any, error) {
 	// Construct a fake struct which contains fields that shouldn't exist, to
 	// detect images that have maliciously-inserted fields. CVE-2021-41190
 	var manifest struct {
@@ -206,11 +205,35 @@ func manifestParser(rdr io.Reader) (interface{}, error) {
 	return manifest.Manifest, nil
 }
 
+// emptyJSONParser only parses "application/vnd.oci.empty.v1+json" and
+// validates that it is actually "{}".
+func emptyJSONParser(rdr io.Reader) (any, error) {
+	if rdr == nil {
+		// must not return a nil interface{}
+		return struct{}{}, ErrNilReader
+	}
+
+	// The only valid value for this blob.
+	const emptyJSON = `{}`
+
+	// Try to read at least one more byte than emptyJSON so if there is some
+	// trailing data we will error out without needing to read any more.
+	data, err := io.ReadAll(io.LimitReader(rdr, int64(len(emptyJSON))+1))
+	if err != nil {
+		return nil, err
+	}
+	if !bytes.Equal(data, []byte(emptyJSON)) {
+		return nil, internal.ErrInvalidEmptyJSON
+	}
+	return struct{}{}, nil
+}
+
 // Register the core image-spec types.
 func init() {
 	RegisterParser(ispec.MediaTypeDescriptor, JSONParser[ispec.Descriptor])
 	RegisterParser(ispec.MediaTypeImageIndex, indexParser)
 	RegisterParser(ispec.MediaTypeImageConfig, JSONParser[ispec.Image])
+	RegisterParser(ispec.MediaTypeEmptyJSON, emptyJSONParser)
 
 	RegisterTarget(ispec.MediaTypeImageManifest)
 	RegisterParser(ispec.MediaTypeImageManifest, manifestParser)
