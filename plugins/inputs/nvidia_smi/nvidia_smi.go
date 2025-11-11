@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -63,12 +64,27 @@ func (smi *NvidiaSMI) Probe() error {
 }
 
 func (smi *NvidiaSMI) Gather(acc telegraf.Accumulator) error {
+	hostMountPrefix := os.Getenv("HOST_MOUNT_PREFIX")
+	binPath := smi.BinPath
+	if len(hostMountPrefix) > 0 {
+		binPath = path.Join(hostMountPrefix, binPath)
+	}
+	if _, err := os.Stat(binPath); os.IsNotExist(err) {
+		return fmt.Errorf("nvidia-smi binary not at path %s, cannot gather GPU data", smi.BinPath)
+	}
+
 	if smi.ignorePlugin {
 		return nil
 	}
 
+	cmds := []string{smi.BinPath}
+	cmds = append(cmds, smi.nvidiaSMIArgs...)
+	if len(hostMountPrefix) > 0 {
+		cmds = append([]string{"chroot", hostMountPrefix}, cmds...)
+	}
+
 	// Construct and execute metrics query
-	data, err := internal.CombinedOutputTimeout(exec.Command(smi.BinPath, smi.nvidiaSMIArgs...), time.Duration(smi.Timeout))
+	data, err := internal.CombinedOutputTimeout(exec.Command(cmds[0], cmds[1:]...), time.Duration(smi.Timeout))
 	if err != nil {
 		return fmt.Errorf("calling %q failed: %w", smi.BinPath, err)
 	}

@@ -1,0 +1,30 @@
+FROM registry.cn-beijing.aliyuncs.com/yunionio/onecloud-base:v3.22.2-0 as base
+LABEL maintainer="Zexi Li <zexi.li@icloud.com>"
+
+FROM base as base-amd64
+ENV TARGETARCH_DIR="amd64"
+
+FROM base as base-arm64
+ENV TARGETARCH_DIR="arm647"
+
+FROM base as base-riscv64
+ENV TARGETARCH_DIR="riscv64"
+
+ARG TARGETARCH
+
+FROM base-${TARGETARCH}
+
+ENV TZ="Asia/Shanghai"
+
+RUN apk update && \
+    apk add --no-cache tzdata ca-certificates ntpsec smartmontools tini nvme-cli lm-sensors && \
+    rm -rf /var/cache/apk/*
+
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+RUN mkdir -p /usr/bin
+ADD ./build/linux-${TARGETARCH_DIR}/telegraf /usr/bin/telegraf
+
+RUN mkdir -p /etc/telegraf/telegraf.d && mkdir -p /etc/logrotate.d
+ADD ./etc/logrotate.d/telegraf /etc/logrotated.d/telegraf
+ENTRYPOINT ["/sbin/tini", "--"]

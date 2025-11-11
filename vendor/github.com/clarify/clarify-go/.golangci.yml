@@ -1,0 +1,58 @@
+version: "2"
+run:
+  modules-download-mode: readonly
+  tests: true
+linters:
+  enable:
+    - asciicheck
+    - bidichk
+    - dupword
+    #- errname
+    - goconst
+    - godot
+    - misspell
+    - nakedret
+    - nilerr
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - unconvert
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - -SA1019
+        - -ST1000
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  new: false
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/clarify/clarify-go/)
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

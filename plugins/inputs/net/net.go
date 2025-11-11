@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
+
+	pnet "github.com/shirou/gopsutil/v4/net"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/config"
@@ -21,9 +24,20 @@ import (
 //go:embed sample.conf
 var sampleConfig string
 
+type InterfaceProfile struct {
+	Name  string
+	Alias string
+	Speed int
+}
+
 type Net struct {
 	Interfaces          []string `toml:"interfaces"`
 	IgnoreProtocolStats bool     `toml:"ignore_protocol_stats"`
+
+	InterfaceConf []InterfaceProfile
+
+	lastTime  time.Time
+	lastStats map[string]pnet.IOCountersStat
 
 	filter     filter.Filter
 	ps         psutil.PS
@@ -32,6 +46,15 @@ type Net struct {
 
 func (*Net) SampleConfig() string {
 	return sampleConfig
+}
+
+func (s *Net) getProfile(name string) *InterfaceProfile {
+	for _, inf := range s.InterfaceConf {
+		if inf.Name == name {
+			return &inf
+		}
+	}
+	return nil
 }
 
 func (n *Net) Init() error {
@@ -50,6 +73,8 @@ func (n *Net) Init() error {
 	// differ especially in container environments.
 	n.skipChecks = os.Getenv("HOST_PROC") != ""
 
+	n.lastStats = make(map[string]pnet.IOCountersStat)
+	n.lastTime = time.Now()
 	return nil
 }
 
@@ -73,6 +98,9 @@ func (n *Net) Gather(acc telegraf.Accumulator) error {
 	for _, iface := range interfaces {
 		interfacesByName[iface.Name] = iface
 	}
+
+	curr := time.Now()
+	timeDelta := curr.Sub(n.lastTime).Seconds()
 
 	for _, io := range netio {
 		if len(n.Interfaces) != 0 {
@@ -104,6 +132,11 @@ func (n *Net) Gather(acc telegraf.Accumulator) error {
 			"interface": io.Name,
 		}
 
+		prof := n.getProfile(io.Name)
+		if prof != nil && len(prof.Alias) > 0 {
+			tags["alias"] = prof.Alias
+		}
+
 		fields := map[string]interface{}{
 			"bytes_sent":   io.BytesSent,
 			"bytes_recv":   io.BytesRecv,
@@ -115,8 +148,41 @@ func (n *Net) Gather(acc telegraf.Accumulator) error {
 			"drop_out":     io.Dropout,
 			"speed":        getInterfaceSpeed(io.Name),
 		}
+
+		if last, ok := n.lastStats[io.Name]; ok {
+			bpsSent := float64(io.BytesSent-last.BytesSent) * 8.0 / timeDelta
+			bpsRecv := float64(io.BytesRecv-last.BytesRecv) * 8.0 / timeDelta
+
+			fields2 := map[string]interface{}{
+				"bps_sent":     bpsSent,
+				"bps_recv":     bpsRecv,
+				"pps_sent":     float64(io.PacketsSent-last.PacketsSent) / timeDelta,
+				"pps_recv":     float64(io.PacketsRecv-last.PacketsRecv) / timeDelta,
+				"pps_err_in":   float64(io.Errin-last.Errin) / timeDelta,
+				"pps_err_out":  float64(io.Errout-last.Errout) / timeDelta,
+				"pps_drop_in":  float64(io.Dropin-last.Dropin) / timeDelta,
+				"pps_drop_out": float64(io.Dropout-last.Dropout) / timeDelta,
+			}
+			speed := 0
+			if prof != nil && prof.Speed > 0 {
+				speed = prof.Speed
+			} else {
+				speed = int(getInterfaceSpeed(io.Name))
+			}
+			fields2["speed"] = speed
+			if speed > 0 {
+				fields2["if_in_percent"] = bpsRecv / float64(speed) / 10000.0
+				fields2["if_out_percent"] = bpsSent / float64(speed) / 10000.0
+			}
+
+			for k, v := range fields2 {
+				fields[k] = v
+			}
+		}
+		n.lastStats[io.Name] = io
 		acc.AddCounter("net", fields, tags)
 	}
+	n.lastTime = curr
 
 	// Get system wide stats for different network protocols
 	// (ignore these stats if the call fails)
@@ -134,7 +200,7 @@ func (n *Net) Gather(acc telegraf.Accumulator) error {
 		tags := map[string]string{
 			"interface": "all",
 		}
-		acc.AddFields("net", fields, tags)
+		acc.AddFields("net", fields, tags, curr)
 	}
 
 	return nil

@@ -1,0 +1,10 @@
+FROM registry.cn-beijing.aliyuncs.com/yunionio/onecloud-base:v3.22.2-0
+
+LABEL maintainer="Qu Xuan <quxuan@yunion.com>"
+
+# install default playbook and install pkg
+RUN mkdir -p /opt/yunion/ansible-install-pkg
+
+COPY build/dist/telegraf*.deb /opt/yunion/ansible-install-pkg
+COPY build/dist/telegraf*.rpm /opt/yunion/ansible-install-pkg
+COPY build/dist/telegraf*.zip /opt/yunion/ansible-install-pkg

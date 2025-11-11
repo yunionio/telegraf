@@ -22,6 +22,8 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
 # Read TCP metrics such as established, time wait and sockets counts.
 [[inputs.netstat]]
   # no configuration
+
+  add = true
 ```
 
 ## Metrics

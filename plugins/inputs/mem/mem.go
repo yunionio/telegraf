@@ -38,6 +38,7 @@ func (ms *Mem) Gather(acc telegraf.Accumulator) error {
 		"total":             vm.Total,
 		"available":         vm.Available,
 		"used":              vm.Used,
+		"free_percent":      100 * float64(vm.Free) / float64(vm.Total),
 		"used_percent":      100 * float64(vm.Used) / float64(vm.Total),
 		"available_percent": 100 * float64(vm.Available) / float64(vm.Total),
 	}

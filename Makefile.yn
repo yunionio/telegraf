@@ -1,0 +1,29 @@
+CACHE_DIR = $(CURDIR)/_cache
+BUILD_DIR = $(CURDIR)/build
+CONTAINER_GO_DIR = /go
+CONTAINER_TELEGRAF_DIR = $(CONTAINER_GO_DIR)/src/github.com/influxdata/telegraf
+REGISTRY ?= "registry.cn-beijing.aliyuncs.com/yunionio"
+DOCKER_BUILDX = docker buildx build --platform linux/arm64,linux/amd64,linux/riscv64 --push -t $(REGISTRY)
+TELEGRAF_CI_VERSION = 1.25.3
+
+container-packages:
+	docker run --rm \
+		--name docker-telegraf-build \
+		-v $(CURDIR):$(CONTAINER_TELEGRAF_DIR) \
+		-v $(CACHE_DIR)/go/pkg:$(CONTAINER_GO_DIR)/pkg \
+		registry.cn-beijing.aliyuncs.com/yunionio/telegraf-ci:${TELEGRAF_CI_VERSION} \
+		/bin/bash -c "cd $(CONTAINER_TELEGRAF_DIR) && make clean && go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0 && make package include_packages='linux_arm64.tar.gz arm64.deb aarch64.rpm linux_riscv64.tar.gz riscv64.rpm riscv64.deb windows_amd64.zip linux_amd64.tar.gz amd64.deb x86_64.rpm'"
+
+TELEGRAF_VERSION = release-1.35.4-1
+docker-image:
+	$(DOCKER_BUILDX)/telegraf:$(TELEGRAF_VERSION) -f ./scripts/Dockerfile.telegraf .
+
+docker-build-image: docker-image container-packages
+
+telegraf-ci:
+	$(DOCKER_BUILDX)/telegraf-ci:$(TELEGRAF_CI_VERSION) -f ./scripts/ci.docker-${TELEGRAF_CI_VERSION} .
+
+FILE_REPO_VERSION = v0.5.1
+
+file-repo:
+	$(DOCKER_BUILDX)/file-repo:$(FILE_REPO_VERSION) -f ./Dockerfile.file-repo .

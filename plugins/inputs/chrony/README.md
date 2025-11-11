@@ -35,7 +35,7 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
 
   ## Try to resolve received addresses to host-names via DNS lookups
   ## Disabled by default to avoid DNS queries especially for slow DNS servers.
-  # dns_lookup = false
+  dns_lookup = false
 
   ## Metrics to query named according to chronyc commands
   ## Available settings are:

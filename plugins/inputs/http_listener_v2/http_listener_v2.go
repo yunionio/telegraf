@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -19,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/golang/snappy"
@@ -201,9 +203,25 @@ func (h *HTTPListenerV2) Stop() {
 	h.wg.Wait()
 }
 
+func (h *HTTPListenerV2) ReloadProcess() {
+	go func() {
+		time.Sleep(1 * time.Second)
+		log.Println("Going to reload process !")
+		if err := syscall.Exec(os.Args[0], os.Args, os.Environ()); err != nil {
+			log.Fatalf("Failed reload process: %s", err)
+		}
+	}()
+}
+
 // ServeHTTP implements [http.Handler]
 func (h *HTTPListenerV2) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	handler := h.serveWrite
+
+	if req.URL.Path == "/reload" {
+		defer h.ReloadProcess()
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	if !choice.Contains(req.URL.Path, h.Paths) {
 		handler = http.NotFound

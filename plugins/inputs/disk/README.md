@@ -34,6 +34,9 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
   ## Ignore mount points by filesystem type.
   ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
 
+  ## Ignore path segments by path.
+  # ignore_mount_points = ["/etc"]
+
   ## Ignore mount points by mount options.
   ## The 'mount' command reports options of all mounts in parathesis.
   ## Bind mounts can be ignored with the special 'bind' option.

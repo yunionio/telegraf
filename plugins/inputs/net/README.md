@@ -32,7 +32,7 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
   ## DEPRECATION NOTICE: A value of 'false' is deprecated and discouraged!
   ##                     Please set this to `true` and use the 'inputs.nstat'
   ##                     plugin instead.
-  # ignore_protocol_stats = false
+  ignore_protocol_stats = false
 ```
 
 ## Metrics
