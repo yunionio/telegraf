@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/internal"
@@ -47,8 +48,16 @@ func (sfs *SysctlFS) Gather(acc telegraf.Accumulator) error {
 		return err
 	}
 
-	acc.AddFields("linux_sysctl_fs", fields, nil)
+	acc.AddFields("linux_sysctl_fs", convertMapKeyToUnderline(fields), nil)
 	return nil
+}
+
+func convertMapKeyToUnderline(fields map[string]interface{}) map[string]interface{} {
+	for k, v := range fields {
+		delete(fields, k)
+		fields[strings.ReplaceAll(k, "-", "_")] = v
+	}
+	return fields
 }
 
 func (sfs *SysctlFS) gatherList(file string, fields map[string]interface{}, fieldNames ...string) error {

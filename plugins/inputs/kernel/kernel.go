@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/prometheus/procfs"
 
@@ -29,6 +30,14 @@ var (
 	bootTime        = []byte("btime")
 )
 
+type kernelStats struct {
+	ctx     int64
+	intr    int64
+	proc    int64
+	pageIn  int64
+	pageOut int64
+}
+
 type Kernel struct {
 	ConfigCollect []string `toml:"collect"`
 
@@ -38,6 +47,9 @@ type Kernel struct {
 	ksmStatsDir     string
 	psiDir          string
 	procfs          procfs.FS
+
+	lastStats *kernelStats
+	lastTime  time.Time
 }
 
 func (*Kernel) SampleConfig() string {
@@ -78,6 +90,10 @@ func (k *Kernel) Gather(acc telegraf.Accumulator) error {
 		return err
 	}
 
+	curr := time.Now()
+	timeDelta := curr.Sub(k.lastTime).Seconds()
+	stat := kernelStats{}
+
 	fields := make(map[string]interface{})
 
 	fields["entropy_avail"] = entropyValue
@@ -91,18 +107,21 @@ func (k *Kernel) Gather(acc telegraf.Accumulator) error {
 				return err
 			}
 			fields["interrupts"] = m
+			stat.intr = m
 		case bytes.Equal(field, contextSwitches):
 			m, err := strconv.ParseInt(string(dataFields[i+1]), 10, 64)
 			if err != nil {
 				return err
 			}
 			fields["context_switches"] = m
+			stat.ctx = m
 		case bytes.Equal(field, processesForked):
 			m, err := strconv.ParseInt(string(dataFields[i+1]), 10, 64)
 			if err != nil {
 				return err
 			}
 			fields["processes_forked"] = m
+			stat.proc = m
 		case bytes.Equal(field, bootTime):
 			m, err := strconv.ParseInt(string(dataFields[i+1]), 10, 64)
 			if err != nil {
@@ -120,8 +139,19 @@ func (k *Kernel) Gather(acc telegraf.Accumulator) error {
 			}
 			fields["disk_pages_in"] = in
 			fields["disk_pages_out"] = out
+			stat.pageIn = in
+			stat.pageOut = out
 		}
 	}
+	if k.lastStats != nil {
+		fields["ctxs_rate"] = float64(stat.ctx-k.lastStats.ctx) / timeDelta
+		fields["intr_rate"] = float64(stat.intr-k.lastStats.intr) / timeDelta
+		fields["proc_rate"] = float64(stat.proc-k.lastStats.proc) / timeDelta
+		fields["pagein_rate"] = float64(stat.pageIn-k.lastStats.pageIn) / timeDelta
+		fields["pageout_rate"] = float64(stat.pageOut-k.lastStats.pageOut) / timeDelta
+	}
+	k.lastStats = &stat
+	k.lastTime = curr
 
 	if k.optCollect["ksm"] {
 		stats := []string{

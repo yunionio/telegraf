@@ -12,7 +12,7 @@
 /tools/config_includer/generator.exe
 /tools/readme_linter/readme_linter*
 /tools/custom_builder/custom_builder*
-/vendor
+#/vendor
 .DS_Store
 process.yml
 /.vscode
@@ -21,3 +21,4 @@ process.yml
 resource.syso
 versioninfo.json
 .uuid
+_cache

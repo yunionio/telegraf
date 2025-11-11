@@ -41,10 +41,13 @@ func (s *System) Gather(acc telegraf.Accumulator) error {
 	}
 
 	fields := map[string]interface{}{
-		"load1":  loadavg.Load1,
-		"load5":  loadavg.Load5,
-		"load15": loadavg.Load15,
-		"n_cpus": numCPUs,
+		"load1":        loadavg.Load1,
+		"load5":        loadavg.Load5,
+		"load15":       loadavg.Load15,
+		"n_cpus":       numCPUs,
+		"load1_pcore":  loadavg.Load1 / float64(numCPUs),
+		"load5_pcore":  loadavg.Load5 / float64(numCPUs),
+		"load15_pcore": loadavg.Load15 / float64(numCPUs),
 	}
 
 	users, err := host.Users()

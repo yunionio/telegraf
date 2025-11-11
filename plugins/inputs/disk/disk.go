@@ -17,10 +17,11 @@ import (
 var sampleConfig string
 
 type Disk struct {
-	MountPoints     []string        `toml:"mount_points"`
-	IgnoreFS        []string        `toml:"ignore_fs"`
-	IgnoreMountOpts []string        `toml:"ignore_mount_opts"`
-	Log             telegraf.Logger `toml:"-"`
+	MountPoints        []string        `toml:"mount_points"`
+	IgnoreFS           []string        `toml:"ignore_fs"`
+	IgnoreMountOpts    []string        `toml:"ignore_mount_opts"`
+	IgnorePathSegments []string        `toml:"ignore_path_segments"`
+	Log                telegraf.Logger `toml:"-"`
 
 	ps psutil.PS
 }
@@ -45,6 +46,17 @@ func (ds *Disk) Gather(acc telegraf.Accumulator) error {
 	for i, du := range disks {
 		if du.Total == 0 {
 			// Skip dummy filesystem (procfs, cgroupfs, ...)
+			continue
+		}
+
+		shouldIgnore := false
+		for _, ips := range ds.IgnorePathSegments {
+			if strings.Contains(du.Path, ips) {
+				shouldIgnore = true
+				break
+			}
+		}
+		if shouldIgnore {
 			continue
 		}
 
@@ -74,6 +86,11 @@ func (ds *Disk) Gather(acc telegraf.Accumulator) error {
 				(float64(du.InodesUsed) + float64(du.InodesFree)) * 100
 		}
 
+		ro := 0
+		if tags["mode"] == "ro" {
+			ro = 1
+		}
+
 		fields := map[string]interface{}{
 			"total":               du.Total,
 			"free":                du.Free,
@@ -83,6 +100,8 @@ func (ds *Disk) Gather(acc telegraf.Accumulator) error {
 			"inodes_free":         du.InodesFree,
 			"inodes_used":         du.InodesUsed,
 			"inodes_used_percent": inodesUsedPercent,
+
+			"read_only": ro,
 		}
 		acc.AddGauge("disk", fields, tags)
 	}

@@ -24,6 +24,7 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
   ## Wildcards are supported except for disk synonyms like '/dev/disk/by-id'.
   ## ex. devices = ["sda", "sdb", "vd*", "/dev/disk/by-id/nvme-eui.00123deadc0de123"]
   # devices = ["*"]
+    excludes = "^nbd"
 
   ## Skip gathering of the disk's serial numbers.
   # skip_serial_number = true

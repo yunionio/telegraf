@@ -27,6 +27,7 @@ type DiskIO struct {
 	Devices          []string        `toml:"devices"`
 	DeviceTags       []string        `toml:"device_tags"`
 	NameTemplates    []string        `toml:"name_templates"`
+	Excludes         string          `toml:"excludes"`
 	SkipSerialNumber bool            `toml:"skip_serial_number"`
 	Log              telegraf.Logger `toml:"-"`
 
@@ -75,7 +76,16 @@ func (d *DiskIO) Gather(acc telegraf.Accumulator) error {
 		return fmt.Errorf("error getting disk io info: %w", err)
 	}
 	collectTime := time.Now()
+
+	var excludeReg *regexp.Regexp
+	if len(d.Excludes) > 0 {
+		excludeReg = regexp.MustCompile(d.Excludes)
+	}
 	for k, io := range diskio {
+		if excludeReg != nil && excludeReg.MatchString(io.Name) {
+			continue
+		}
+
 		match := false
 		if d.deviceFilter != nil && d.deviceFilter.Match(io.Name) {
 			match = true
@@ -116,6 +126,7 @@ func (d *DiskIO) Gather(acc telegraf.Accumulator) error {
 		fields := map[string]interface{}{
 			"reads":            io.ReadCount,
 			"writes":           io.WriteCount,
+			"iobytes":          io.ReadBytes + io.WriteBytes,
 			"read_bytes":       io.ReadBytes,
 			"write_bytes":      io.WriteBytes,
 			"read_time":        io.ReadTime,
@@ -123,8 +134,10 @@ func (d *DiskIO) Gather(acc telegraf.Accumulator) error {
 			"io_time":          io.IoTime,
 			"weighted_io_time": io.WeightedIO,
 			"iops_in_progress": io.IopsInProgress,
+			"iocount":          io.ReadCount + io.WriteCount,
 			"merged_reads":     io.MergedReadCount,
 			"merged_writes":    io.MergedWriteCount,
+			"merged_iocount":   io.MergedReadCount + io.MergedWriteCount,
 		}
 		if lastValue, exists := d.lastIOCounterStat[k]; exists {
 			// Check for wrap around
@@ -136,6 +149,41 @@ func (d *DiskIO) Gather(acc telegraf.Accumulator) error {
 				deltaRWCount := float64(io.ReadCount-lastValue.ReadCount) + float64(io.WriteCount-lastValue.WriteCount)
 				deltaRWTime := float64(io.ReadTime-lastValue.ReadTime) + float64(io.WriteTime-lastValue.WriteTime)
 				deltaIOTime := float64(io.IoTime - lastValue.IoTime)
+
+				timeDelta := float64(collectTime.Sub(d.lastCollectTime).Seconds())
+
+				readIo := io.ReadCount - lastValue.ReadCount
+				writeIo := io.WriteCount - lastValue.WriteCount
+				fields["iops"] = float64(readIo+writeIo) / timeDelta
+				readBytes := io.ReadBytes - lastValue.ReadBytes
+				fields["read_iops"] = float64(readIo) / timeDelta
+				writeBytes := io.WriteBytes - lastValue.WriteBytes
+				fields["write_iops"] = float64(writeIo) / timeDelta
+				fields["bps"] = float64(readBytes+writeBytes) / timeDelta
+				fields["read_bps"] = float64(readBytes) / timeDelta
+				fields["write_bps"] = float64(writeBytes) / timeDelta
+				readTime := io.ReadTime - lastValue.ReadTime
+				writeTime := io.WriteTime - lastValue.WriteTime
+
+				ioTime := io.IoTime - lastValue.IoTime
+				weightedIoTime := io.WeightedIO - lastValue.WeightedIO
+				readAwait := 0.0
+				if readIo > 0 {
+					readAwait = float64(readTime) / float64(readIo)
+				}
+				writeAwait := 0.0
+				if writeIo > 0 {
+					writeAwait = float64(writeTime) / float64(writeIo)
+				}
+				ioAwait := 0.0
+				if readIo+writeIo > 0 {
+					ioAwait = float64(readTime+writeTime) / float64(readIo+writeIo)
+				}
+				fields["read_awit"] = readAwait
+				fields["write_awit"] = writeAwait
+				fields["await"] = ioAwait
+				fields["ioutil"] = float64(ioTime*100) / timeDelta / 1000.0
+				fields["avgqu_sz"] = float64(weightedIoTime) / timeDelta / 1000.0
 
 				if deltaRWCount > 0 {
 					fields["io_await"] = deltaRWTime / deltaRWCount

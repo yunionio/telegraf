@@ -172,6 +172,7 @@ require (
 	github.com/pcolladosoto/goslurm v0.1.0
 	github.com/peterbourgon/unixtransport v0.0.7
 	github.com/pion/dtls/v2 v2.2.12
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus-community/pro-bing v0.7.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
@@ -238,7 +239,7 @@ require (
 	golang.org/x/sys v0.37.0
 	golang.org/x/term v0.36.0
 	golang.org/x/text v0.30.0
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20211230205640-daad0b7ba671
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10
 	gonum.org/v1/gonum v0.16.0
 	google.golang.org/api v0.252.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4
@@ -253,6 +254,10 @@ require (
 	layeh.com/radius v0.0.0-20221205141417-e7fbddd11d68
 	modernc.org/sqlite v1.39.1
 	software.sslmate.com/src/go-pkcs12 v0.6.0
+	yunion.io/x/executor v0.0.0-20250518005516-5402e9e0bed0
+	yunion.io/x/jsonutils v1.0.0
+	yunion.io/x/log v1.0.0
+	yunion.io/x/pkg v1.10.3
 )
 
 require (
@@ -356,6 +361,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.7 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.8-0.20250403174932-29230038a667 // indirect
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
 	github.com/go-darwin/apfs v0.0.0-20211011131704-f84b94dbf348 // indirect
@@ -438,9 +444,10 @@ require (
 	github.com/mattn/go-ieproxy v0.0.11 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.17 // indirect
-	github.com/mdlayher/genetlink v1.2.0 // indirect
+	github.com/mdlayher/genetlink v1.3.2 // indirect
 	github.com/mdlayher/netlink v1.7.2 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
+	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/minio/highwayhash v1.0.3 // indirect
@@ -484,7 +491,6 @@ require (
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.9 // indirect
 	github.com/pkg/xattr v0.4.12 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
@@ -560,7 +566,7 @@ require (
 	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
-	golang.zx2c4.com/wireguard v0.0.0-20211209221555-9c9e7e272434 // indirect
+	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
@@ -573,7 +579,6 @@ require (
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	honnef.co/go/tools v0.2.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d // indirect

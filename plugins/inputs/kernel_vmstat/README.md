@@ -29,6 +29,7 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
 # This plugin ONLY supports Linux
 [[inputs.kernel_vmstat]]
   # no configuration
+  stat_file = "/proc/vmstat"
 ```
 
 ## Metrics
