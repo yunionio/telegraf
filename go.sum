@@ -2399,7 +2399,7 @@ github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6Kllzaw
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/vapourismo/knx-go v0.0.0-20240915133544-a6ab43471c11 h1:YzrpNqpAuAgUQ0vseiI3mAVz7zr0rM5LWdaGCCr6Ipc=
 github.com/vapourismo/knx-go v0.0.0-20240915133544-a6ab43471c11/go.mod h1:+iC7aAxEwuJ4mvdKaY0zCGT0dpIC/AtHt4yv2jr5FOo=
-github.com/vbatts/go-mtree v0.6.0 h1:3pV7y4vBGQvATYn1ksHkPD41MtHaLaVI9T8NvH8qPRQ=
+github.com/vbatts/go-mtree v0.6.0 h1:n4r+Tweta4oH0+zWfv77VmfvWXrO69smspK37xvzgMI=
 github.com/vbatts/go-mtree v0.6.0/go.mod h1:W7bcG9PCn6lFY+ljGlZxx9DONkxL3v8a7HyN+PrSrjA=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
 github.com/vishvananda/netlink v1.3.1 h1:3AEMt62VKqz90r0tmNhog0r/PpWKmrEShJU0wJW6bV0=
