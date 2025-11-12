@@ -23,7 +23,7 @@ docker-build-image: docker-image container-packages
 telegraf-ci:
 	$(DOCKER_BUILDX)/telegraf-ci:$(TELEGRAF_CI_VERSION) -f ./scripts/ci.docker-${TELEGRAF_CI_VERSION} .
 
-FILE_REPO_VERSION = v0.5.1
+FILE_REPO_VERSION = v0.5.2
 
 file-repo:
 	$(DOCKER_BUILDX)/file-repo:$(FILE_REPO_VERSION) -f ./Dockerfile.file-repo .
