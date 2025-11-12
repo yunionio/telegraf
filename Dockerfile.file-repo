@@ -4,7 +4,12 @@ LABEL maintainer="Qu Xuan <quxuan@yunion.com>"
 
 # install default playbook and install pkg
 RUN mkdir -p /opt/yunion/ansible-install-pkg
+RUN apk add git
 
 COPY build/dist/telegraf*.deb /opt/yunion/ansible-install-pkg
 COPY build/dist/telegraf*.rpm /opt/yunion/ansible-install-pkg
 COPY build/dist/telegraf*.zip /opt/yunion/ansible-install-pkg
+
+RUN mkdir -p /opt/yunion/playbook
+RUN mkdir /opt/yunion/playbook/monitor-agent
+RUN git clone https://github.com/yunionio/monitor-agent.git /opt/yunion/playbook/monitor-agent --recurse-submodules
