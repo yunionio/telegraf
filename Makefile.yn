@@ -14,7 +14,7 @@ container-packages:
 		registry.cn-beijing.aliyuncs.com/yunionio/telegraf-ci:${TELEGRAF_CI_VERSION} \
 		/bin/bash -c "cd $(CONTAINER_TELEGRAF_DIR) && make clean && go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0 && make package include_packages='linux_arm64.tar.gz arm64.deb aarch64.rpm linux_riscv64.tar.gz riscv64.rpm riscv64.deb windows_amd64.zip linux_amd64.tar.gz amd64.deb x86_64.rpm'"
 
-TELEGRAF_VERSION = release-1.35.4-1
+TELEGRAF_VERSION = release-1.36.4-1
 docker-image:
 	$(DOCKER_BUILDX)/telegraf:$(TELEGRAF_VERSION) -f ./scripts/Dockerfile.telegraf .
 
