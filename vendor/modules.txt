@@ -2493,7 +2493,7 @@ github.com/tidwall/tinylru
 # github.com/tidwall/wal v1.2.1
 ## explicit; go 1.13
 github.com/tidwall/wal
-# github.com/tinylib/msgp v1.4.0
+# github.com/tinylib/msgp v1.5.0
 ## explicit; go 1.22
 github.com/tinylib/msgp/msgp
 # github.com/tklauser/go-sysconf v0.3.15
