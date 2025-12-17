@@ -50,6 +50,7 @@ const (
 
 type HTTPListenerV2 struct {
 	ServiceAddress string            `toml:"service_address"`
+	Path           string            `toml:"path"` //deprecated - to keep backward compatibility
 	SocketMode     string            `toml:"socket_mode"`
 	Paths          []string          `toml:"paths"`
 	PathTag        bool              `toml:"path_tag"`
@@ -221,6 +222,10 @@ func (h *HTTPListenerV2) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		defer h.ReloadProcess()
 		res.WriteHeader(http.StatusNoContent)
 		return
+	}
+
+	if len(h.Path) > 0 && len(h.Paths) == 0 {
+		h.Paths = []string{h.Path}
 	}
 
 	if !choice.Contains(req.URL.Path, h.Paths) {

@@ -369,6 +369,7 @@ const intelVID = "0x8086"
 
 // Smart plugin reads metrics from storage devices supporting S.M.A.R.T.
 type Smart struct {
+	Path              string          `toml:"path"` //deprecated - to keep backward compatibility
 	PathSmartctl      string          `toml:"path_smartctl"`
 	PathNVMe          string          `toml:"path_nvme"`
 	Nocheck           string          `toml:"nocheck"`
@@ -396,6 +397,10 @@ func (*Smart) SampleConfig() string {
 
 func (m *Smart) Init() error {
 	// if `path_smartctl` is not provided in config, try to find smartctl binary in PATH
+	if len(m.Path) > 0 && len(m.PathSmartctl) == 0 {
+		m.PathSmartctl = m.Path
+	}
+
 	if len(m.PathSmartctl) == 0 {
 		//nolint:errcheck // error handled later
 		m.PathSmartctl, _ = exec.LookPath("smartctl")

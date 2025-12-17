@@ -19,11 +19,19 @@ var sampleConfig string
 type Disk struct {
 	MountPoints        []string        `toml:"mount_points"`
 	IgnoreFS           []string        `toml:"ignore_fs"`
+	IgnoreMountPoints  []string        `toml:"ignore_mount_points"`
 	IgnoreMountOpts    []string        `toml:"ignore_mount_opts"`
 	IgnorePathSegments []string        `toml:"ignore_path_segments"`
 	Log                telegraf.Logger `toml:"-"`
 
 	ps psutil.PS
+}
+
+func (ds *Disk) GetIgnoreMountOpts() []string {
+	ret := []string{}
+	ret = append(ret, ds.IgnoreMountPoints...)
+	ret = append(ret, ds.IgnoreMountOpts...)
+	return ret
 }
 
 func (*Disk) SampleConfig() string {
@@ -39,7 +47,7 @@ func (ds *Disk) Init() error {
 }
 
 func (ds *Disk) Gather(acc telegraf.Accumulator) error {
-	disks, partitions, err := ds.ps.DiskUsage(ds.MountPoints, ds.IgnoreMountOpts, ds.IgnoreFS)
+	disks, partitions, err := ds.ps.DiskUsage(ds.MountPoints, ds.GetIgnoreMountOpts(), ds.IgnoreFS)
 	if err != nil {
 		return fmt.Errorf("error getting disk usage info: %w", err)
 	}

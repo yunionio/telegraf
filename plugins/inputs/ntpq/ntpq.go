@@ -46,6 +46,8 @@ type NTPQ struct {
 	ReachFormat string   `toml:"reach_format"`
 
 	runQ func(string) ([]byte, error)
+
+	DNSLookup bool `toml:"dns_lookup"` //deprecated - to keep backward compatibility
 }
 
 type column struct {
