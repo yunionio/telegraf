@@ -41,7 +41,12 @@ func (*NvidiaSMI) SampleConfig() string {
 }
 
 func (smi *NvidiaSMI) Start(telegraf.Accumulator) error {
-	if _, err := os.Stat(smi.BinPath); os.IsNotExist(err) {
+	hostMountPrefix := os.Getenv("HOST_MOUNT_PREFIX")
+	binPath := smi.BinPath
+	if len(hostMountPrefix) > 0 {
+		binPath = path.Join(hostMountPrefix, binPath)
+	}
+	if _, err := os.Stat(binPath); os.IsNotExist(err) {
 		binPath, err := exec.LookPath("nvidia-smi")
 		if err != nil {
 			return &internal.StartupError{Err: err}
