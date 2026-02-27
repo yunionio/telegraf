@@ -49,7 +49,8 @@ func (smi *NvidiaSMI) Start(telegraf.Accumulator) error {
 	if _, err := os.Stat(binPath); os.IsNotExist(err) {
 		binPath, err := exec.LookPath("nvidia-smi")
 		if err != nil {
-			return &internal.StartupError{Err: err}
+			smi.Log.Errorf("nvidia-smi binary not found in path %s, looking for it in PATH: %s", smi.BinPath, err)
+			return nil
 		}
 		smi.BinPath = binPath
 	}
