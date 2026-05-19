@@ -254,7 +254,8 @@ func (h *HAProxy) importCsvResult(r io.Reader, acc telegraf.Accumulator, host st
 				// do nothing. These fields are just a more verbose description of the check_status & agent_status fields
 			case "status", "check_status", "last_chk", "mode", "tracked", "agent_status", "last_agt", "addr", "cookie":
 				// these are string fields
-				fields[fieldName] = v
+				// fields[fieldName] = v
+				tags[fieldName] = v
 			case "lastsess":
 				vi, err := strconv.ParseInt(v, 10, 64)
 				if err != nil {
