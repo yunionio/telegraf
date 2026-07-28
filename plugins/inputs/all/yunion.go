@@ -9,6 +9,7 @@ import (
 	"github.com/influxdata/telegraf/internal/procutils"
 
 	_ "github.com/influxdata/telegraf/plugins/inputs/ni_rsrc_mon"
+	_ "github.com/influxdata/telegraf/plugins/inputs/npu_smi"
 	_ "github.com/influxdata/telegraf/plugins/inputs/radeontop"
 	_ "github.com/influxdata/telegraf/plugins/inputs/vasmi"
 )
