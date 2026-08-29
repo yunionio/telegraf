@@ -1,30 +1,21 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package otlpmetricgrpc // import "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
+
+	metricpb "go.opentelemetry.io/proto/otlp/metrics/v1"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc/internal/oconf"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc/internal/transform"
 	"go.opentelemetry.io/otel/internal/global"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
-	metricpb "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
 
 // Exporter is a OpenTelemetry metric Exporter using gRPC.
@@ -90,7 +81,7 @@ func (e *Exporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) e
 			return fmt.Errorf("failed to upload metrics: %w", upErr)
 		}
 		// Merge the two errors.
-		return fmt.Errorf("failed to upload incomplete metrics (%s): %w", err, upErr)
+		return fmt.Errorf("failed to upload incomplete metrics (%w): %w", err, upErr)
 	}
 	return err
 }
@@ -101,7 +92,7 @@ func (e *Exporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) e
 // This method returns an error if the method is canceled by the passed context.
 //
 // This method is safe to call concurrently.
-func (e *Exporter) ForceFlush(ctx context.Context) error {
+func (*Exporter) ForceFlush(ctx context.Context) error {
 	// The exporter and client hold no state, nothing to flush.
 	return ctx.Err()
 }
@@ -125,11 +116,11 @@ func (e *Exporter) Shutdown(ctx context.Context) error {
 	return err
 }
 
-var errShutdown = fmt.Errorf("gRPC exporter is shutdown")
+var errShutdown = errors.New("gRPC exporter is shutdown")
 
 type shutdownClient struct{}
 
-func (c shutdownClient) err(ctx context.Context) error {
+func (shutdownClient) err(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -145,7 +136,7 @@ func (c shutdownClient) Shutdown(ctx context.Context) error {
 }
 
 // MarshalLog returns logging data about the Exporter.
-func (e *Exporter) MarshalLog() interface{} {
+func (*Exporter) MarshalLog() any {
 	return struct{ Type string }{Type: "OTLP/gRPC"}
 }
 
