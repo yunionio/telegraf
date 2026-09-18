@@ -1,0 +1,2 @@
+index,name,uuid,pci.bus_id,compute_mode,memory.total,memory.used,memory.free,temperature.gpu,temperature.memory,utilization.gpu,utilization.memory,power.draw,clocks.current.sm,clocks.current.memory
+0,PPU-ZW810E,GPU-019e2226-4211-0208-0000-000000ab261d,00000000:a8:00.0,Default,98304,248,98056,42,42,38,0,51.99,200,1800

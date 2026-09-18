@@ -1,0 +1,696 @@
+<?xml version="1.0" ?>
+<!DOCTYPE xpu_smi_log SYSTEM "xpusmi_device_v11.dtd">
+<xpu_smi_log>
+        <timestamp>Fri Sep 18 06:44:44 2026</timestamp>
+        <driver_version>5.19.0.0</driver_version>
+        <cuda_version>10.2</cuda_version>
+        <attached_xpus>8</attached_xpus>
+        <xpu id="00000000:03:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V00115</serial>
+                <uuid>GPU-a0ac042a-5a14-5481-bf7e-dd8e523792cd</uuid>
+                <minor_number>0</minor_number>
+                <oam_id>3</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>03</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:03:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>36 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>87.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:05:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6253V001FY</serial>
+                <uuid>GPU-1490b1c8-8410-557a-874a-45d4bf2e1456</uuid>
+                <minor_number>1</minor_number>
+                <oam_id>2</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>05</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:05:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>37 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>84.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:63:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V0008M</serial>
+                <uuid>GPU-631b38d9-d28f-5423-b3b9-2f45e9e85841</uuid>
+                <minor_number>2</minor_number>
+                <oam_id>0</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>63</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:63:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>36 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>86.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:65:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V00055</serial>
+                <uuid>GPU-2b3c8353-b038-55e6-8e9e-37d4a440b788</uuid>
+                <minor_number>3</minor_number>
+                <oam_id>1</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>65</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:65:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>37 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>86.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:83:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V0000N</serial>
+                <uuid>GPU-992c4a63-dc36-5670-a4cb-d0f550190ce4</uuid>
+                <minor_number>4</minor_number>
+                <oam_id>7</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>83</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:83:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>33 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>84.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:85:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V000S9</serial>
+                <uuid>GPU-e55dde0a-0289-5246-8438-0d83267730a2</uuid>
+                <minor_number>5</minor_number>
+                <oam_id>6</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>85</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:85:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>36 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>83.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:A3:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V0006F</serial>
+                <uuid>GPU-3db83d6e-2584-5d62-b453-55ddca5239b3</uuid>
+                <minor_number>6</minor_number>
+                <oam_id>4</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>A3</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:A3:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>33 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>84.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+        <xpu id="00000000:A5:00.0">
+                <product_name>P800 OAM</product_name>
+                <product_brand>KUNLUNXIN</product_brand>
+                <product_architecture>KL3</product_architecture>
+                <serial>02K15K6252V0007V</serial>
+                <uuid>GPU-5e4fa5ff-6c8b-5873-ab72-c3e5a176da72</uuid>
+                <minor_number>7</minor_number>
+                <oam_id>5</oam_id>
+                <xpu_part_number>B00100300110312</xpu_part_number>
+                <firmware_version>
+                        <pbl_version>1.0</pbl_version>
+                        <pcie_version>2.14</pcie_version>
+                        <sbl>1.48</sbl>
+                        <all_version>1.0.2.14.1.48</all_version>
+                        <cpld_version>5.4</cpld_version>
+                </firmware_version>
+                <pci>
+                        <pci_bus>A5</pci_bus>
+                        <pci_device>00</pci_device>
+                        <pci_device>0</pci_device>
+                        <pci_domain>0000</pci_domain>
+                        <pci_device_id>36881D22</pci_device_id>
+                        <pci_bus_id>00000000:A5:00.0</pci_bus_id>
+                        <pci_sub_system_id>00010001</pci_sub_system_id>
+                        <pci_xpu_link_info>
+                                <pcie_gen>
+                                        <max_link_gen>4</max_link_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <max_link_width>16x</max_link_width>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_xpu_link_info>
+                </pci>
+                <fb_memory_usage>
+                        <total>98304 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>98304 MiB</free>
+                </fb_memory_usage>
+                <l3_usage>
+                        <total>96 MiB</total>
+                        <reserved>0 MiB</reserved>
+                        <used>0 MiB</used>
+                        <free>96 MiB</free>
+                </l3_usage>
+                <utilization>
+                        <xpu_util>0 %</xpu_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                        <pending_ecc>Enabled</pending_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <volatile>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </volatile>
+                        <aggregate>
+                                <dram_correctable>0</dram_correctable>
+                                <dram_uncorrectable>0</dram_uncorrectable>
+                        </aggregate>
+                </ecc_errors>
+                <temperature>
+                        <xpu_temp>36 C</xpu_temp>
+                </temperature>
+                <supported_xpu_target_temp>
+                        <xpu_target_temp_min>Invalid Argument</xpu_target_temp_min>
+                        <xpu_target_temp_max>Invalid Argument</xpu_target_temp_max>
+                </supported_xpu_target_temp>
+                <power_readings>
+                        <power_state>N/A</power_state>
+                        <enforced_power_limit>400.00 W</enforced_power_limit>
+                        <power_draw>85.00 W</power_draw>
+                </power_readings>
+                <clocks>
+                        <cluster_clock>1450 MHz</cluster_clock>
+                        <cdnn_clock>1450 MHz</cdnn_clock>
+                </clocks>
+                <processes>
+                </processes>
+                <accounted_processes>
+                </accounted_processes>
+        </xpu>
+
+</xpu_smi_log>

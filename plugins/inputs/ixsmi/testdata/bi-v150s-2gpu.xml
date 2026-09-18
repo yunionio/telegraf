@@ -1,0 +1,116 @@
+<?xml version="1.0" ?>
+<!DOCTYPE ixsmi_log SYSTEM "ixsmi_device.dtd">
+<ixsmi_log>
+        <timestamp>Tue Sep  1 19:38:42 2026</timestamp>
+        <driver_version>4.4.0</driver_version>
+        <cuda_version>10.2</cuda_version>
+        <attached_gpus>2</attached_gpus>
+        <gpu id="00000000:26:00.0">
+                <product_name>Iluvatar BI-V150S</product_name>
+                <serial>2426005680215E</serial>
+                <uuid>GPU-5fe225c8-c806-50f5-9132-90c020e40005</uuid>
+                <minor_number>0</minor_number>
+                <vbios_version>2.0.0</vbios_version>
+                <fan_speed>N/A</fan_speed>
+                <memory_usage>
+                        <total>32768 MiB</total>
+                        <used>68 MiB</used>
+                        <free>32700 MiB</free>
+                </memory_usage>
+                <utilization>
+                        <gpu_util>0 %</gpu_util>
+                        <memory_util>1 %</memory_util>
+                        <encoder_util>0 %</encoder_util>
+                        <decoder_util>0 %</decoder_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <single_bit>0</single_bit>
+                        <double_bit>0</double_bit>
+                </ecc_errors>
+                <temperature>
+                        <gpu_temp>35 C</gpu_temp>
+                        <memory_temp>34 C</memory_temp>
+                </temperature>
+                <power_readings>
+                        <gpu_power_draw>13 W</gpu_power_draw>
+                        <current_gpu_power_limit>205 W</current_gpu_power_limit>
+                        <board_power_draw>53 W</board_power_draw>
+                        <current_board_power_limit>450 W</current_board_power_limit>
+                </power_readings>
+                <clocks>
+                        <sm_clock>500 MHz</sm_clock>
+                        <mem_clock>1600 MHz</mem_clock>
+                </clocks>
+                <pci>
+                        <pci_gpu_link_info>
+                                <pcie_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_gpu_link_info>
+                </pci>
+                <compute_mode>Default</compute_mode>
+                <performance_state>P0</performance_state>
+                <processes>
+                </processes>
+        </gpu>
+        <gpu id="00000000:29:00.0">
+                <product_name>Iluvatar BI-V150S</product_name>
+                <serial>2426005680215E</serial>
+                <uuid>GPU-a1c65686-2223-5310-9cc7-6079e42e3b35</uuid>
+                <minor_number>1</minor_number>
+                <vbios_version>2.0.0</vbios_version>
+                <fan_speed>N/A</fan_speed>
+                <memory_usage>
+                        <total>32768 MiB</total>
+                        <used>68 MiB</used>
+                        <free>32700 MiB</free>
+                </memory_usage>
+                <utilization>
+                        <gpu_util>0 %</gpu_util>
+                        <memory_util>1 %</memory_util>
+                        <encoder_util>0 %</encoder_util>
+                        <decoder_util>0 %</decoder_util>
+                </utilization>
+                <ecc_mode>
+                        <current_ecc>Enabled</current_ecc>
+                </ecc_mode>
+                <ecc_errors>
+                        <single_bit>0</single_bit>
+                        <double_bit>0</double_bit>
+                </ecc_errors>
+                <temperature>
+                        <gpu_temp>33 C</gpu_temp>
+                        <memory_temp>33 C</memory_temp>
+                </temperature>
+                <power_readings>
+                        <gpu_power_draw>13 W</gpu_power_draw>
+                        <current_gpu_power_limit>205 W</current_gpu_power_limit>
+                        <board_power_draw>53 W</board_power_draw>
+                        <current_board_power_limit>450 W</current_board_power_limit>
+                </power_readings>
+                <clocks>
+                        <sm_clock>500 MHz</sm_clock>
+                        <mem_clock>1600 MHz</mem_clock>
+                </clocks>
+                <pci>
+                        <pci_gpu_link_info>
+                                <pcie_gen>
+                                        <current_link_gen>4</current_link_gen>
+                                </pcie_gen>
+                                <link_widths>
+                                        <current_link_width>16x</current_link_width>
+                                </link_widths>
+                        </pci_gpu_link_info>
+                </pci>
+                <compute_mode>Default</compute_mode>
+                <performance_state>P0</performance_state>
+                <processes>
+                </processes>
+        </gpu>
+</ixsmi_log>
