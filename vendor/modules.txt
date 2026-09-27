@@ -2294,8 +2294,8 @@ github.com/rootless-containers/proto/go-proto
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
-# github.com/safchain/ethtool v0.6.2
-## explicit; go 1.23.0
+# github.com/safchain/ethtool v0.7.0
+## explicit; go 1.24.0
 github.com/safchain/ethtool
 # github.com/samber/lo v1.47.0
 ## explicit; go 1.18
@@ -3008,7 +3008,7 @@ golang.org/x/oauth2/jwt
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.37.0
+# golang.org/x/sys v0.38.0
 ## explicit; go 1.24.0
 golang.org/x/sys/cpu
 golang.org/x/sys/plan9
