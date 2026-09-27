@@ -2457,7 +2457,7 @@ github.com/tdrn-org/go-tr064/services/tr64desc/wancommonifconfig
 github.com/tdrn-org/go-tr064/services/tr64desc/wandslifconfig
 github.com/tdrn-org/go-tr064/services/tr64desc/wanpppconn
 github.com/tdrn-org/go-tr064/services/tr64desc/wlanconfig
-# github.com/testcontainers/testcontainers-go v0.39.0
+# github.com/testcontainers/testcontainers-go v0.40.0
 ## explicit; go 1.24.0
 github.com/testcontainers/testcontainers-go
 github.com/testcontainers/testcontainers-go/exec
@@ -2468,7 +2468,7 @@ github.com/testcontainers/testcontainers-go/internal/core/network
 github.com/testcontainers/testcontainers-go/log
 github.com/testcontainers/testcontainers-go/network
 github.com/testcontainers/testcontainers-go/wait
-# github.com/testcontainers/testcontainers-go/modules/azure v0.39.0
+# github.com/testcontainers/testcontainers-go/modules/azure v0.40.0
 ## explicit; go 1.24.0
 github.com/testcontainers/testcontainers-go/modules/azure/azurite
 github.com/testcontainers/testcontainers-go/modules/azure/eventhubs
