@@ -68,16 +68,25 @@ func collectResults(acc telegraf.Accumulator, hcus []*HCU) error {
 }
 
 type HCU struct {
-	Index    string  `json:"hcu"`
-	Temp     float64 `json:"temp"`
-	AvgPwr   float64 `json:"avg_pwr"`
-	Perf     string  `json:"perf"`
-	PwrCap   float64 `json:"pwr_cap"`
-	VRAM     float64 `json:"vram"`
-	HCUUtil  float64 `json:"hcu_util"`
-	Dec      float64 `json:"dec"`
-	Enc      float64 `json:"enc"`
-	Mode     string  `json:"mode"`
+	Index        string  `json:"hcu"`
+	Temp         float64 `json:"temp"`
+	AvgPwr       float64 `json:"avg_pwr"`
+	Perf         string  `json:"perf"`
+	PwrCap       float64 `json:"pwr_cap"`
+	VRAM         float64 `json:"vram"`
+	HCUUtil      float64 `json:"hcu_util"`
+	Dec          float64 `json:"dec"`
+	Enc          float64 `json:"enc"`
+	Mode         string  `json:"mode"`
+	GttTotal     int     `json:"gtt_total"`
+	GttUsed      int     `json:"gtt_used"`
+	GttFree      int     `json:"gtt_free"`
+	VisVramTotal int     `json:"vis_vram_total"`
+	VisVramUsed  int     `json:"vis_vram_used"`
+	VisVramFree  int     `json:"vis_vram_free"`
+	VramTotal    int     `json:"vram_total"`
+	VramUsed     int     `json:"vram_used"`
+	VramFree     int     `json:"vram_free"`
 }
 
 func roundFloat(f float64) float64 {
@@ -139,7 +148,16 @@ func (h hysmi) pollMetrics() ([]*HCU, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s: %s", h.BinPath, ret)
 	}
-	return parseResults(ret)
+	hcus, err := parseResults(ret)
+	if err != nil {
+		return nil, err
+	}
+	// Best-effort memory info; ignore errors to keep backward compatibility.
+	memRet, err := procutils.NewRemoteCommandAsFarAsPossible(h.BinPath, "--showmeminfo", "all").Output()
+	if err == nil {
+		_ = parseMemoryInfo(hcus, memRet)
+	}
+	return hcus, nil
 }
 
 func parseResults(content []byte) ([]*HCU, error) {
@@ -182,15 +200,97 @@ func parseResults(content []byte) ([]*HCU, error) {
 	return hcus, nil
 }
 
+func parseMemoryInfo(hcus []*HCU, content []byte) error {
+	hcuMap := make(map[string]*HCU, len(hcus))
+	for _, hcu := range hcus {
+		hcuMap[hcu.Index] = hcu
+	}
+
+	for line := range strings.SplitSeq(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "HCU[") {
+			continue
+		}
+		parts := strings.SplitN(line, ":", 3)
+		if len(parts) != 3 {
+			continue
+		}
+
+		indexPart := strings.TrimSpace(parts[0])
+		indexPart = strings.TrimPrefix(indexPart, "HCU[")
+		indexPart = strings.TrimSuffix(indexPart, "]")
+		hcu, ok := hcuMap[indexPart]
+		if !ok {
+			continue
+		}
+
+		mid := strings.TrimSpace(parts[1])
+		mid = strings.TrimSuffix(mid, " (MiB)")
+		var memType, field string
+		if strings.HasSuffix(mid, "Total Used Memory") {
+			field = "used"
+			memType = strings.TrimSpace(strings.TrimSuffix(mid, "Total Used Memory"))
+		} else if strings.HasSuffix(mid, "Total Memory") {
+			field = "total"
+			memType = strings.TrimSpace(strings.TrimSuffix(mid, "Total Memory"))
+		} else {
+			continue
+		}
+
+		valueStr := strings.TrimSpace(parts[2])
+		value, err := strconv.Atoi(valueStr)
+		if err != nil {
+			continue
+		}
+
+		switch memType {
+		case "gtt":
+			if field == "total" {
+				hcu.GttTotal = value
+			} else {
+				hcu.GttUsed = value
+			}
+		case "vis_vram":
+			if field == "total" {
+				hcu.VisVramTotal = value
+			} else {
+				hcu.VisVramUsed = value
+			}
+		case "vram":
+			if field == "total" {
+				hcu.VramTotal = value
+			} else {
+				hcu.VramUsed = value
+			}
+		}
+	}
+
+	for _, hcu := range hcus {
+		hcu.GttFree = max(0, hcu.GttTotal-hcu.GttUsed)
+		hcu.VisVramFree = max(0, hcu.VisVramTotal-hcu.VisVramUsed)
+		hcu.VramFree = max(0, hcu.VramTotal-hcu.VramUsed)
+	}
+	return nil
+}
+
 func (h HCU) getFields() map[string]interface{} {
 	return map[string]interface{}{
-		"temperature_gpu":     h.Temp,
-		"power_draw":          h.AvgPwr,
-		"power_cap":           h.PwrCap,
-		"utilization_memory":  h.VRAM,
-		"utilization_gpu":     h.HCUUtil,
-		"utilization_decoder": h.Dec,
-		"utilization_encoder": h.Enc,
+		"temperature_gpu":       h.Temp,
+		"power_draw":            h.AvgPwr,
+		"power_cap":             h.PwrCap,
+		"utilization_memory":    h.VRAM,
+		"utilization_gpu":       h.HCUUtil,
+		"utilization_decoder":   h.Dec,
+		"utilization_encoder":   h.Enc,
+		"memory_total":          h.VramTotal,
+		"memory_used":           h.VramUsed,
+		"memory_free":           h.VramFree,
+		"memory_gtt_total":      h.GttTotal,
+		"memory_gtt_used":       h.GttUsed,
+		"memory_gtt_free":       h.GttFree,
+		"memory_vis_vram_total": h.VisVramTotal,
+		"memory_vis_vram_used":  h.VisVramUsed,
+		"memory_vis_vram_free":  h.VisVramFree,
 	}
 }
 
