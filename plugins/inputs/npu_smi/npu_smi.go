@@ -225,6 +225,7 @@ func (d *Device) getFields() map[string]interface{} {
 
 func (d *Device) getTags(info *NpuInfo) map[string]string {
 	tags := map[string]string{
+		"index":   strconv.Itoa(d.NpuID),
 		"npu_id":  strconv.Itoa(d.NpuID),
 		"chip_id": strconv.Itoa(d.ChipID),
 	}

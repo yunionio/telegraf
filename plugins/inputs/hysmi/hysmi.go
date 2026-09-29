@@ -296,6 +296,7 @@ func (h HCU) getFields() map[string]interface{} {
 
 func (h HCU) getTags() map[string]string {
 	return map[string]string{
+		"index":     h.Index,
 		"hcu":       h.Index,
 		"perf_mode": h.Perf,
 		"mode":      h.Mode,
