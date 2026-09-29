@@ -21,6 +21,25 @@ HCU     Temp     AvgPwr     Perf     PwrCap     VRAM%      HCU%      Dec%      E
 ======================================== End of SMI Log ========================================
 `
 
+const testMemContent = `
+================================= System Management Interface ==================================
+================================================================================================
+HCU[0]          : gtt Total Memory (MiB): 515905
+HCU[0]          : gtt Total Used Memory (MiB): 8
+HCU[0]          : vis_vram Total Memory (MiB): 65520
+HCU[0]          : vis_vram Total Used Memory (MiB): 2
+HCU[0]          : vram Total Memory (MiB): 65520
+HCU[0]          : vram Total Used Memory (MiB): 2
+HCU[1]          : gtt Total Memory (MiB): 515905
+HCU[1]          : gtt Total Used Memory (MiB): 16
+HCU[1]          : vis_vram Total Memory (MiB): 65520
+HCU[1]          : vis_vram Total Used Memory (MiB): 10
+HCU[1]          : vram Total Memory (MiB): 65520
+HCU[1]          : vram Total Used Memory (MiB): 10
+================================================================================================
+======================================== End of SMI Log ========================================
+`
+
 func Test_parseResults(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -57,10 +76,51 @@ func Test_parseResults(t *testing.T) {
 	}
 }
 
+func Test_parseMemoryInfo(t *testing.T) {
+	hcus := []*HCU{
+		{Index: "0"},
+		{Index: "1"},
+	}
+	if err := parseMemoryInfo(hcus, []byte(testMemContent)); err != nil {
+		t.Fatalf("parseMemoryInfo() error = %v", err)
+	}
+	if hcus[0].GttTotal != 515905 || hcus[0].GttUsed != 8 || hcus[0].GttFree != 515897 {
+		t.Errorf("hcu 0 gtt = %d/%d/%d, want 515905/8/515897", hcus[0].GttTotal, hcus[0].GttUsed, hcus[0].GttFree)
+	}
+	if hcus[0].VisVramTotal != 65520 || hcus[0].VisVramUsed != 2 || hcus[0].VisVramFree != 65518 {
+		t.Errorf("hcu 0 vis_vram = %d/%d/%d, want 65520/2/65518", hcus[0].VisVramTotal, hcus[0].VisVramUsed, hcus[0].VisVramFree)
+	}
+	if hcus[0].VramTotal != 65520 || hcus[0].VramUsed != 2 || hcus[0].VramFree != 65518 {
+		t.Errorf("hcu 0 vram = %d/%d/%d, want 65520/2/65518", hcus[0].VramTotal, hcus[0].VramUsed, hcus[0].VramFree)
+	}
+	if hcus[1].GttTotal != 515905 || hcus[1].GttUsed != 16 || hcus[1].GttFree != 515889 {
+		t.Errorf("hcu 1 gtt = %d/%d/%d, want 515905/16/515889", hcus[1].GttTotal, hcus[1].GttUsed, hcus[1].GttFree)
+	}
+
+	// Unknown HCU index and malformed lines should be ignored.
+	badContent := `
+HCU[99]         : vram Total Memory (MiB): 100
+HCU[abc]        : vram Total Memory (MiB): 100
+HCU[0]          : unknown Total Memory (MiB): 100
+HCU[0]          : vram Unknown Memory (MiB): 100
+HCU[0]          : vram Total Memory (MiB): not_a_number
+`
+	if err := parseMemoryInfo(hcus, []byte(badContent)); err != nil {
+		t.Fatalf("parseMemoryInfo() error = %v", err)
+	}
+	// hcu 0 values should remain unchanged.
+	if hcus[0].VramTotal != 65520 {
+		t.Errorf("hcu 0 vram total changed to %d", hcus[0].VramTotal)
+	}
+}
+
 func Test_HCU_getFieldsAndTags(t *testing.T) {
 	hcu := &HCU{
 		Index: "0", Temp: 51, AvgPwr: 95, Perf: "auto", PwrCap: 1000,
 		VRAM: 10.5, HCUUtil: 20.3, Dec: 1.2, Enc: 3.4, Mode: "Normal",
+		VramTotal: 65520, VramUsed: 2, VramFree: 65518,
+		GttTotal: 515905, GttUsed: 8, GttFree: 515897,
+		VisVramTotal: 65520, VisVramUsed: 2, VisVramFree: 65518,
 	}
 	fields := hcu.getFields()
 	if fields["temperature_gpu"] != 51.0 {
@@ -71,6 +131,21 @@ func Test_HCU_getFieldsAndTags(t *testing.T) {
 	}
 	if fields["utilization_memory"] != 10.5 {
 		t.Errorf("utilization_memory = %v, want 10.5", fields["utilization_memory"])
+	}
+	if fields["memory_total"] != 65520 {
+		t.Errorf("memory_total = %v, want 65520", fields["memory_total"])
+	}
+	if fields["memory_used"] != 2 {
+		t.Errorf("memory_used = %v, want 2", fields["memory_used"])
+	}
+	if fields["memory_free"] != 65518 {
+		t.Errorf("memory_free = %v, want 65518", fields["memory_free"])
+	}
+	if fields["memory_gtt_total"] != 515905 {
+		t.Errorf("memory_gtt_total = %v, want 515905", fields["memory_gtt_total"])
+	}
+	if fields["memory_vis_vram_total"] != 65520 {
+		t.Errorf("memory_vis_vram_total = %v, want 65520", fields["memory_vis_vram_total"])
 	}
 	tags := hcu.getTags()
 	if tags["hcu"] != "0" || tags["perf_mode"] != "auto" || tags["mode"] != "Normal" {

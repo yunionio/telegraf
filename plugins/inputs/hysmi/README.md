@@ -43,9 +43,23 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
     - `utilization_memory`
     - `utilization_encoder`
     - `utilization_decoder`
+    - `memory_total`
+    - `memory_used`
+    - `memory_free`
+    - `memory_gtt_total`
+    - `memory_gtt_used`
+    - `memory_gtt_free`
+    - `memory_vis_vram_total`
+    - `memory_vis_vram_used`
+    - `memory_vis_vram_free`
+
+> [!NOTE]
+> Memory fields are collected from `hy-smi --showmeminfo all`. If the command is
+> not supported by the installed `hy-smi` version, the plugin falls back to
+> outputting only the original fields above.
 
 ## Example Output
 
 ```text
-hysmi,hcu=0,mode=normal,perf_mode=auto temperature_gpu=42,power_draw=35,power_cap=300,utilization_gpu=0,utilization_memory=1,utilization_encoder=0,utilization_decoder=0 1523991122000000000
+hysmi,hcu=0,mode=normal,perf_mode=auto temperature_gpu=42,power_draw=35,power_cap=300,utilization_gpu=0,utilization_memory=1,utilization_encoder=0,utilization_decoder=0,memory_total=65520i,memory_used=2i,memory_free=65518i,memory_gtt_total=515905i,memory_gtt_used=8i,memory_gtt_free=515897i,memory_vis_vram_total=65520i,memory_vis_vram_used=2i,memory_vis_vram_free=65518i 1523991122000000000
 ```
