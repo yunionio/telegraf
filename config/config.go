@@ -1411,8 +1411,8 @@ func (c *Config) addInput(name, source string, table *ast.Table) error {
 			printHistoricPluginDeprecationNotice("inputs", name, di)
 			return errors.New("plugin deprecated")
 		}
-
-		return fmt.Errorf("undefined but requested input: %s", name)
+		log.Printf("undefined but requested input: %s", name)
+		return nil
 	}
 	input := creator()
 
