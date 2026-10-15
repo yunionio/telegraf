@@ -1,0 +1,76 @@
+{
+  "Attached GPUs": "2",
+  "GPU": [
+    {
+      "Index": "0",
+      "Product Name": "MTT S5000",
+      "GPU UUID": "a19f33bc-dc56-4314-a675-7272e8d831fe",
+      "DeviceType": "Physical",
+      "Performance State": "P0",
+      "PCI": {
+        "Bus ID": "00000000:18:00.0",
+        "GPU Link Info": {
+          "PCIe Generation": {
+            "Max": "5",
+            "Current": "5"
+          },
+          "Link Width": {
+            "Max": "16x",
+            "Current": "16x"
+          }
+        }
+      },
+      "FB Memory Usage": {
+        "Total": "81920MiB",
+        "Used": "9081MiB",
+        "Free": "72839MiB"
+      },
+      "Utilization": {
+        "Gpu": "100%",
+        "Memory": "11%",
+        "Encoder": "0%",
+        "Decoder": "0%"
+      },
+      "Temperature": {
+        "GPU Current Temp": "50C"
+      },
+      "Power Readings": {
+        "Power Draw ": "427.47W",
+        "Current Power Limit": "750.00W",
+        "Requested Power Limit": "N/A",
+        "Default Power Limit": "750.00W",
+        "Min Power Limit": "N/A",
+        "Max Power Limit": "N/A"
+      },
+      "Clocks": {
+        "Graphics": "1750MHz",
+        "Memory": "2500MHz",
+        "Video": "0MHz"
+      }
+    },
+    {
+      "Index": "8",
+      "Product Name": "MTT S5000",
+      "GPU UUID": "virt-skip",
+      "DeviceType": "Virt",
+      "Performance State": "P0",
+      "PCI": {
+        "Bus ID": "00000000:ff:00.0"
+      },
+      "FB Memory Usage": {
+        "Total": "81920MiB",
+        "Used": "0MiB",
+        "Free": "81920MiB"
+      },
+      "Utilization": {
+        "Gpu": "0%",
+        "Memory": "0%",
+        "Encoder": "0%",
+        "Decoder": "0%"
+      },
+      "Temperature": {
+        "GPU Current Temp": "40C"
+      }
+    }
+  ]
+}
