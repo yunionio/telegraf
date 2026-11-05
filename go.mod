@@ -3,6 +3,7 @@ module github.com/influxdata/telegraf
 go 1.25.0
 
 godebug x509negativeserial=1
+godebug multipathtcp=0
 
 require (
 	cloud.google.com/go/bigquery v1.71.0
