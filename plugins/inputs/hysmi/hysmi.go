@@ -28,7 +28,8 @@ func init() {
 
 const measurement = "hysmi"
 
-const dataLineLen = 10
+const hcuDataLineLen = 10
+const dcuDataLineLen = 8
 
 //go:embed sample.conf
 var sampleConfig string
@@ -60,23 +61,21 @@ func (h hysmi) Gather(acc telegraf.Accumulator) error {
 	return nil
 }
 
-func collectResults(acc telegraf.Accumulator, hcus []*HCU) error {
-	for _, hcu := range hcus {
-		acc.AddFields(measurement, hcu.getFields(), hcu.getTags())
+func collectResults(acc telegraf.Accumulator, metrics []*Hysmi) error {
+	for _, metric := range metrics {
+		acc.AddFields(measurement, metric.getFields(), metric.getTags())
 	}
 	return nil
 }
 
-type HCU struct {
+type Hysmi struct {
 	Index        string  `json:"hcu"`
 	Temp         float64 `json:"temp"`
 	AvgPwr       float64 `json:"avg_pwr"`
 	Perf         string  `json:"perf"`
 	PwrCap       float64 `json:"pwr_cap"`
 	VRAM         float64 `json:"vram"`
-	HCUUtil      float64 `json:"hcu_util"`
-	Dec          float64 `json:"dec"`
-	Enc          float64 `json:"enc"`
+	Util         float64 `json:"util"`
 	Mode         string  `json:"mode"`
 	GttTotal     int     `json:"gtt_total"`
 	GttUsed      int     `json:"gtt_used"`
@@ -87,6 +86,10 @@ type HCU struct {
 	VramTotal    int     `json:"vram_total"`
 	VramUsed     int     `json:"vram_used"`
 	VramFree     int     `json:"vram_free"`
+
+	// dec/enc for hcu only
+	Dec float64 `json:"dec"`
+	Enc float64 `json:"enc"`
 }
 
 func roundFloat(f float64) float64 {
@@ -108,11 +111,45 @@ func parseFloatValue(value string) (float64, error) {
 	return roundFloat(result), nil
 }
 
-func newHCU(parts []string) (*HCU, error) {
-	if len(parts) != dataLineLen {
+func newDCU(parts []string) (*Hysmi, error) {
+	if len(parts) != dcuDataLineLen {
+		return nil, errors.Errorf("wrong dcu parts: %v", parts)
+	}
+	dcu := &Hysmi{
+		Index: parts[0],
+		Perf:  parts[3],
+		Mode:  parts[7],
+	}
+	errs := []error{}
+	iF := func(part string, f func(val float64)) {
+		val, err := parseFloatValue(part)
+		if err != nil {
+			errs = append(errs, errors.Wrapf(err, "get float value: %s", part))
+			return
+		}
+		f(val)
+	}
+	iF(parts[1], func(val float64) { dcu.Temp = val })
+	iF(parts[2], func(val float64) { dcu.AvgPwr = val })
+	iF(parts[4], func(val float64) { dcu.PwrCap = val })
+	iF(parts[5], func(val float64) { dcu.VRAM = val })
+	iF(parts[6], func(val float64) { dcu.Util = val })
+
+	if len(errs) > 0 {
+		var msg string
+		for _, err := range errs {
+			msg += err.Error() + "\n"
+		}
+		return nil, errors.New(msg)
+	}
+	return dcu, nil
+}
+
+func newHCU(parts []string) (*Hysmi, error) {
+	if len(parts) != hcuDataLineLen {
 		return nil, errors.Errorf("wrong hcu parts: %v", parts)
 	}
-	hcu := &HCU{
+	hcu := &Hysmi{
 		Index: parts[0],
 		Perf:  parts[3],
 		Mode:  parts[9],
@@ -130,7 +167,7 @@ func newHCU(parts []string) (*HCU, error) {
 	iF(parts[2], func(val float64) { hcu.AvgPwr = val })
 	iF(parts[4], func(val float64) { hcu.PwrCap = val })
 	iF(parts[5], func(val float64) { hcu.VRAM = val })
-	iF(parts[6], func(val float64) { hcu.HCUUtil = val })
+	iF(parts[6], func(val float64) { hcu.Util = val })
 	iF(parts[7], func(val float64) { hcu.Dec = val })
 	iF(parts[8], func(val float64) { hcu.Enc = val })
 	if len(errs) > 0 {
@@ -143,27 +180,28 @@ func newHCU(parts []string) (*HCU, error) {
 	return hcu, nil
 }
 
-func (h hysmi) pollMetrics() ([]*HCU, error) {
+func (h hysmi) pollMetrics() ([]*Hysmi, error) {
 	ret, err := procutils.NewRemoteCommandAsFarAsPossible(h.BinPath).Output()
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s: %s", h.BinPath, ret)
 	}
-	hcus, err := parseResults(ret)
+	metrics, driverType, err := parseResults(ret)
 	if err != nil {
 		return nil, err
 	}
 	// Best-effort memory info; ignore errors to keep backward compatibility.
 	memRet, err := procutils.NewRemoteCommandAsFarAsPossible(h.BinPath, "--showmeminfo", "all").Output()
 	if err == nil {
-		_ = parseMemoryInfo(hcus, memRet)
+		_ = parseMemoryInfo(metrics, memRet, fmt.Sprintf("%s[", driverType))
 	}
-	return hcus, nil
+	return metrics, nil
 }
 
-func parseResults(content []byte) ([]*HCU, error) {
+func parseResults(content []byte) ([]*Hysmi, string, error) {
 	lines := strings.Split(string(content), "\n")
 	headerFound := false
-	hcus := make([]*HCU, 0)
+	hyMetrics := make([]*Hysmi, 0)
+	driverType := ""
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -177,38 +215,47 @@ func parseResults(content []byte) ([]*HCU, error) {
 		}
 		parts := strings.Fields(line)
 		if !headerFound {
-			if len(parts) >= 2 && parts[0] == "HCU" && parts[1] == "Temp" {
+			if len(parts) >= 2 && (parts[0] == "HCU" || parts[0] == "DCU") && parts[1] == "Temp" {
 				headerFound = true
 			}
+			driverType = parts[0]
 			continue
 		}
 		if _, err := strconv.Atoi(parts[0]); err != nil {
 			continue
 		}
-		hcu, err := newHCU(parts)
-		if err != nil {
-			return nil, errors.Wrapf(err, "new hcu with: %v", parts)
+		if driverType == "HCU" {
+			hcu, err := newHCU(parts)
+			if err != nil {
+				return nil, "", errors.Wrapf(err, "new hcu with: %v", parts)
+			}
+			hyMetrics = append(hyMetrics, hcu)
+		} else {
+			dcu, err := newDCU(parts)
+			if err != nil {
+				return nil, "", errors.Wrapf(err, "new dcu with: %v", parts)
+			}
+			hyMetrics = append(hyMetrics, dcu)
 		}
-		hcus = append(hcus, hcu)
 	}
 	if !headerFound {
-		return nil, errors.New("can't found hcu header line")
+		return nil, "", errors.New("can't found hcu/dcu header line")
 	}
-	if len(hcus) == 0 {
-		return nil, errors.New("no hcu data lines found")
+	if len(hyMetrics) == 0 {
+		return nil, "", errors.New("no hy-smi data lines found")
 	}
-	return hcus, nil
+	return hyMetrics, driverType, nil
 }
 
-func parseMemoryInfo(hcus []*HCU, content []byte) error {
-	hcuMap := make(map[string]*HCU, len(hcus))
-	for _, hcu := range hcus {
-		hcuMap[hcu.Index] = hcu
+func parseMemoryInfo(hyMetrics []*Hysmi, content []byte, prefix string) error {
+	cardMap := make(map[string]*Hysmi, len(hyMetrics))
+	for _, card := range hyMetrics {
+		cardMap[card.Index] = card
 	}
 
 	for line := range strings.SplitSeq(string(content), "\n") {
 		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "HCU[") {
+		if !strings.HasPrefix(line, prefix) {
 			continue
 		}
 		parts := strings.SplitN(line, ":", 3)
@@ -217,9 +264,9 @@ func parseMemoryInfo(hcus []*HCU, content []byte) error {
 		}
 
 		indexPart := strings.TrimSpace(parts[0])
-		indexPart = strings.TrimPrefix(indexPart, "HCU[")
+		indexPart = strings.TrimPrefix(indexPart, prefix)
 		indexPart = strings.TrimSuffix(indexPart, "]")
-		hcu, ok := hcuMap[indexPart]
+		hcu, ok := cardMap[indexPart]
 		if !ok {
 			continue
 		}
@@ -265,7 +312,7 @@ func parseMemoryInfo(hcus []*HCU, content []byte) error {
 		}
 	}
 
-	for _, hcu := range hcus {
+	for _, hcu := range hyMetrics {
 		hcu.GttFree = max(0, hcu.GttTotal-hcu.GttUsed)
 		hcu.VisVramFree = max(0, hcu.VisVramTotal-hcu.VisVramUsed)
 		hcu.VramFree = max(0, hcu.VramTotal-hcu.VramUsed)
@@ -273,13 +320,13 @@ func parseMemoryInfo(hcus []*HCU, content []byte) error {
 	return nil
 }
 
-func (h HCU) getFields() map[string]interface{} {
+func (h Hysmi) getFields() map[string]interface{} {
 	return map[string]interface{}{
 		"temperature_gpu":       h.Temp,
 		"power_draw":            h.AvgPwr,
 		"power_cap":             h.PwrCap,
 		"utilization_memory":    h.VRAM,
-		"utilization_gpu":       h.HCUUtil,
+		"utilization_gpu":       h.Util,
 		"utilization_decoder":   h.Dec,
 		"utilization_encoder":   h.Enc,
 		"memory_total":          h.VramTotal,
@@ -294,10 +341,11 @@ func (h HCU) getFields() map[string]interface{} {
 	}
 }
 
-func (h HCU) getTags() map[string]string {
+func (h Hysmi) getTags() map[string]string {
 	return map[string]string{
 		"index":     h.Index,
 		"hcu":       h.Index,
+		"dcu":       h.Index,
 		"perf_mode": h.Perf,
 		"mode":      h.Mode,
 	}
