@@ -16,6 +16,21 @@ AIC      Pwr |  DevId   DieId    Temp   Oclk   Dclk   Eclk   Gclk  Share_Mem    
   1     14.3 |      4       0    59.6     20   1100   1050   1550      85.94   6.92   0.00   4.71  0.00    27.84   N/A
                     7       0    59.3     20   1100   1050   1550      75.00   3.96   0.67  19.03  0.00    26.80   N/A
 <1/1>`
+
+	// vasmi dmon --loop 1
+	testContent2 = `Smi version:3.3.1_sp2
+^[[1;1H^[[2JDevice Monitor of AIC
+AIC   Pwr(W)  |  Die   Temp(C)   Oclk(MHz)   Dclk(MHz)   Eclk(MHz)    %Mem    %Dec    %Enc    %AI     %Dsp
+--------------*-------------------------------------------------------------------------------------------
+  0     49.7  |    0      43.2         880          20          20    1.99    0.00    0.00    0.00    0.00
+              |    1      44.9         880          20          20    1.99    0.00    0.00    0.00    0.00
+              |    2      44.1         880          20          20    1.99    0.00    0.00    0.00    0.00
+              |    3      43.6         880          20          20    1.99    0.00    0.00    0.00    0.00
+  1     49.9  |    0      45.6         880          20          20    1.99    0.00    0.00    0.00    0.00
+              |    1      46.5         880          20          20    1.99    0.00    0.00    0.00    0.00
+              |    2      45.4         880          20          20    1.99    0.00    0.00    0.00    0.00
+              |    3      45.7         880          20          20    1.99    0.00    0.00    0.00    0.00
+`
 )
 
 func Test_parseResults(t *testing.T) {
@@ -103,6 +118,24 @@ func Test_parseResults(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name:    "vasmi 3.3 format",
+			content: testContent2,
+			want: []*AIC{
+				{AIC: "0", Power: 49.7, Devices: []*Device{
+					{DevId: "0", DieId: "0", Temp: 43.2, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+					{DevId: "1", DieId: "1", Temp: 44.9, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+					{DevId: "2", DieId: "2", Temp: 44.1, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+					{DevId: "3", DieId: "3", Temp: 43.6, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+				}},
+				{AIC: "1", Power: 49.9, Devices: []*Device{
+					{DevId: "0", DieId: "0", Temp: 45.6, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+					{DevId: "1", DieId: "1", Temp: 46.5, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+					{DevId: "2", DieId: "2", Temp: 45.4, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+					{DevId: "3", DieId: "3", Temp: 45.7, Oclk: 880, Dclk: 20, Eclk: 20, ShareMem: 1.99},
+				}},
+			},
 		},
 	}
 	for _, tt := range tests {

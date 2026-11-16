@@ -207,6 +207,9 @@ func (v vasmi) pollMetrics() ([]*AIC, error) {
 }
 
 func parseResults(content []byte) ([]*AIC, error) {
+	if strings.Contains(string(content), "Pwr(W)") {
+		return parseResultsV3(content)
+	}
 	lines := strings.Split(string(content), "\n")
 	startIdx := 0
 	endIdx := 0
@@ -246,6 +249,52 @@ func parseResults(content []byte) ([]*AIC, error) {
 		} else {
 			return nil, errors.Errorf("invalid line: %v", line)
 		}
+	}
+	return aics, nil
+}
+
+// parseResultsV3 handles the compact per-die format introduced in vasmi 3.3.
+func parseResultsV3(content []byte) ([]*AIC, error) {
+	aics := make([]*AIC, 0)
+	var current *AIC
+	for _, line := range strings.Split(string(content), "\n") {
+		parts := strings.Fields(line)
+		if len(parts) == 0 || parts[0] == "AIC" || !strings.Contains(line, "|") {
+			continue
+		}
+		var dieParts []string
+		if len(parts) == 13 && parts[2] == "|" {
+			power, err := getFloatValue(parts[1])
+			if err != nil {
+				return nil, errors.Wrap(err, "parse aic power")
+			}
+			current = &AIC{AIC: parts[0], Power: power, Devices: make([]*Device, 0)}
+			aics = append(aics, current)
+			dieParts = parts[3:]
+		} else if len(parts) == 11 && parts[0] == "|" {
+			if current == nil {
+				return nil, errors.New("die row found before aic row")
+			}
+			dieParts = parts[1:]
+		} else {
+			continue
+		}
+		if len(dieParts) != 10 {
+			return nil, errors.Errorf("invalid die row: %v", parts)
+		}
+		dev := &Device{DevId: dieParts[0], DieId: dieParts[0]}
+		values := []*float64{&dev.Temp, &dev.Oclk, &dev.Dclk, &dev.Eclk, &dev.ShareMem, &dev.Dec, &dev.Enc, &dev.AI}
+		for i, target := range values {
+			value, err := getFloatValue(dieParts[i+1])
+			if err != nil {
+				return nil, errors.Wrapf(err, "parse die value %q", dieParts[i+1])
+			}
+			*target = value
+		}
+		current.Devices = append(current.Devices, dev)
+	}
+	if len(aics) == 0 {
+		return nil, errors.New("no vasmi metrics found")
 	}
 	return aics, nil
 }
