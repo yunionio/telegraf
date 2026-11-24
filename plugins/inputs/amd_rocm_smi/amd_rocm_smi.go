@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -111,7 +112,12 @@ func (*ROCmSMI) SampleConfig() string {
 }
 
 func (rsmi *ROCmSMI) Start(telegraf.Accumulator) error {
-	if _, err := os.Stat(rsmi.BinPath); os.IsNotExist(err) {
+	hostMountPrefix := os.Getenv("HOST_MOUNT_PREFIX")
+	binPath := rsmi.BinPath
+	if len(hostMountPrefix) > 0 {
+		binPath = path.Join(hostMountPrefix, binPath)
+	}
+	if _, err := os.Stat(binPath); os.IsNotExist(err) {
 		binPath, err := exec.LookPath("rocm-smi")
 		if err != nil {
 			return &internal.StartupError{Err: err}
@@ -134,9 +140,11 @@ func (rsmi *ROCmSMI) Gather(acc telegraf.Accumulator) error {
 func (*ROCmSMI) Stop() {}
 
 func (rsmi *ROCmSMI) pollROCmSMI() ([]byte, error) {
+	hostMountPrefix := os.Getenv("HOST_MOUNT_PREFIX")
+
 	// Construct and execute metrics query, there currently exist (ROCm v4.3.x) a "-a" option
 	// that does not provide all the information, so each needed parameter is set manually
-	cmd := exec.Command(rsmi.BinPath,
+	cmds := []string{rsmi.BinPath,
 		"-o",
 		"-l",
 		"-m",
@@ -174,8 +182,13 @@ func (rsmi *ROCmSMI) pollROCmSMI() ([]byte, error) {
 		"--showtopohops",
 		"--showtopotype",
 		"--showtoponuma",
-		"--json")
+		"--json"}
 
+	if len(hostMountPrefix) > 0 {
+		cmds = append([]string{"chroot", hostMountPrefix}, cmds...)
+	}
+
+	cmd := exec.Command(cmds[0], cmds[1:]...)
 	return internal.StdOutputTimeout(cmd, time.Duration(rsmi.Timeout))
 }
 
