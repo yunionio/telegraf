@@ -33,6 +33,7 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
 - measurement: `vasmi`
   - tags
     - `aic`
+    - `index`
     - `dev_id`
     - `die_id`
   - fields
@@ -49,5 +50,5 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
 ## Example Output
 
 ```text
-vasmi,aic=0,dev_id=0,die_id=0 temperature_gpu=41,utilization_gpu=0,utilization_memory=1,aic_power=25 1523991122000000000
+vasmi,aic=0,index=0,dev_id=0,die_id=0 temperature_gpu=41,utilization_gpu=0,utilization_memory=1,aic_power=25 1523991122000000000
 ```

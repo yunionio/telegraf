@@ -320,6 +320,7 @@ func (d Device) getFields(aic *AIC) map[string]interface{} {
 func (d Device) getTags(aic *AIC) map[string]string {
 	return map[string]string{
 		"aic":    aic.AIC,
+		"index":  d.DevId,
 		"dev_id": d.DevId,
 		"die_id": d.DieId,
 	}
