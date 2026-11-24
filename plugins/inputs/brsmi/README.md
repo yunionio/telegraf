@@ -21,11 +21,11 @@ See the [CONFIGURATION.md][CONFIGURATION.md] for more details.
 ## Configuration
 
 ```toml @sample.conf
-[[inputs.brsmi]]
-  ## Optional: path to brsmi binary, defaults to $PATH via exec.LookPath
-  # bin_path = "/usr/bin/brsmi"
-  ## Optional: timeout for GPU polling
-  # timeout = "5s"
+## Path to brsmi executable.
+bin_path = "/usr/bin/brsmi"
+
+## Command timeout.
+# timeout = "5s"
 ```
 
 ## Metrics
