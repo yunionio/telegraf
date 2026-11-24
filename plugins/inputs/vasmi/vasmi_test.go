@@ -33,6 +33,22 @@ AIC   Pwr(W)  |  Die   Temp(C)   Oclk(MHz)   Dclk(MHz)   Eclk(MHz)    %Mem    %D
 `
 )
 
+func Test_getTags(t *testing.T) {
+	aic := &AIC{AIC: "0"}
+	dev := &Device{DevId: "4", DieId: "0"}
+
+	got := dev.getTags(aic)
+	want := map[string]string{
+		"aic":    "0",
+		"index":  "4",
+		"dev_id": "4",
+		"die_id": "0",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("getTags() got = %#v, want %#v", got, want)
+	}
+}
+
 func Test_parseResults(t *testing.T) {
 	tests := []struct {
 		name    string
