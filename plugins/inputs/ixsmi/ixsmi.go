@@ -45,14 +45,14 @@ func (s *ixsmi) libPath() string {
 		return s.LibPath
 	}
 	if s.BinPath == "" {
-		return "/usr/local/corex-4.4.0/lib64"
+		return "/usr/local/corex/lib64"
 	}
 	return filepath.Join(filepath.Dir(filepath.Dir(s.BinPath)), "lib64")
 }
 
 func (s *ixsmi) Gather(acc telegraf.Accumulator) error {
 	if s.BinPath == "" {
-		s.BinPath = "/usr/local/corex-4.4.0/bin/ixsmi"
+		s.BinPath = "/usr/local/corex/bin/ixsmi"
 	}
 	if _, err := procutils.IsRemoteFileExist(s.BinPath); err != nil {
 		return err
